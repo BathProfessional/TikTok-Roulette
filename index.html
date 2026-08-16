@@ -3,18 +3,18 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <title>ASTRAL</title>
+  <title>BLOOM</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Audiowide&family=Nunito:wght@600;800&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --hue: 292;
-      --cyan: hsl(var(--hue) 92% 62%);
-      --orange: hsl(calc(var(--hue) + 132) 95% 58%);
-      --ink: #fff5ff;
-      --muted: rgba(255, 210, 255, 0.62);
-      --panel: rgba(18, 4, 28, 0.55);
+      --hue: 300;
+      --glow: hsl(var(--hue) 92% 62%);
+      --hot: hsl(calc(var(--hue) + 128) 95% 58%);
+      --ink: #fff8ff;
+      --muted: rgba(255, 210, 255, 0.65);
+      --panel: rgba(12, 2, 22, 0.52);
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -23,83 +23,45 @@
       width: 100%;
       height: 100%;
       overflow: hidden;
-      background: #000;
+      background: #050008;
       color: var(--ink);
-      font-family: Rajdhani, "Segoe UI", sans-serif;
+      font-family: Nunito, "Segoe UI", sans-serif;
       user-select: none;
     }
 
     body.overlay { background: transparent; }
 
-      canvas {
+    canvas {
       position: absolute;
       inset: 0;
       width: 100%;
       height: 100%;
       display: block;
-      image-rendering: auto;
-      will-change: transform;
     }
 
-    .scan {
+    .veil {
       position: absolute;
       inset: 0;
       pointer-events: none;
       z-index: 6;
-      background:
-        radial-gradient(ellipse at 50% 40%, transparent 30%, hsla(var(--hue), 80%, 12%, 0.28) 100%),
-        repeating-conic-gradient(from 0deg at 50% 42%, transparent 0 12deg, hsla(var(--hue), 90%, 60%, 0.03) 12deg 13deg);
-      mix-blend-mode: screen;
-      animation: spinveil 28s linear infinite;
+      background: radial-gradient(circle at 50% 52%, transparent 42%, rgba(0, 0, 0, 0.42) 100%);
     }
 
-    @keyframes spinveil {
-      to { filter: hue-rotate(360deg); }
-    }
-
-    .hud, .side, .banner, .combo, .cleared, .settings, .pilot {
+    .hud, .side, .banner, .combo, .bloomed, .settings, .last {
       position: absolute;
       z-index: 8;
       background: var(--panel);
-      border: 1px solid hsla(var(--hue), 90%, 70%, 0.45);
-      box-shadow: 0 0 28px hsla(var(--hue), 90%, 50%, 0.22), inset 0 0 18px hsla(calc(var(--hue) + 80), 90%, 50%, 0.08);
-      border-radius: 22px 8px 22px 8px;
-      backdrop-filter: blur(12px) saturate(1.4);
+      border: 1px solid hsla(var(--hue), 90%, 70%, 0.42);
+      box-shadow: 0 0 28px hsla(var(--hue), 90%, 50%, 0.2);
+      border-radius: 28px;
+      backdrop-filter: blur(14px) saturate(1.5);
       pointer-events: none;
-    }
-
-    .speedo {
-      position: absolute;
-      left: 50%;
-      bottom: 22px;
-      transform: translateX(-50%);
-      z-index: 8;
-      text-align: center;
-      pointer-events: none;
-      text-shadow: 0 2px 0 #000, 0 0 18px var(--cyan);
-    }
-
-    .speedo b {
-      display: block;
-      font-family: Orbitron, sans-serif;
-      font-size: clamp(28px, 4.2vw, 52px);
-      font-weight: 900;
-      color: #fff;
-      letter-spacing: 0.06em;
-      line-height: 0.9;
-    }
-
-    .speedo span {
-      font-size: 12px;
-      font-weight: 700;
-      letter-spacing: 0.42em;
-      color: var(--cyan);
     }
 
     .hud {
-      top: 22px;
-      left: 24px;
-      right: 24px;
+      top: 20px;
+      left: 22px;
+      right: 22px;
       display: grid;
       grid-template-columns: auto 1fr auto;
       gap: 18px;
@@ -108,50 +70,45 @@
     }
 
     .logo {
-      font-family: Orbitron, sans-serif;
-      font-weight: 900;
-      letter-spacing: 0.12em;
+      font-family: Audiowide, sans-serif;
       font-size: 22px;
-      color: var(--cyan);
-      text-shadow: 0 0 18px var(--cyan), 0 0 42px var(--orange);
-    }
-
-    .sector {
-      font-family: Orbitron, sans-serif;
-      font-size: 13px;
       letter-spacing: 0.18em;
+      color: var(--glow);
+      text-shadow: 0 0 18px var(--glow), 0 0 40px var(--hot);
+    }
+
+    .layer {
+      font-size: 12px;
+      letter-spacing: 0.22em;
       color: var(--muted);
+      text-transform: uppercase;
     }
 
-    .energy {
-      min-width: 0;
-    }
-
-    .energy-top {
+    .nectar-top {
       display: flex;
       justify-content: space-between;
       font-size: 13px;
-      font-weight: 700;
+      font-weight: 800;
       letter-spacing: 0.14em;
       text-transform: uppercase;
       margin-bottom: 6px;
     }
 
-    .need { color: var(--cyan); }
+    .need { color: var(--glow); }
 
     .track {
-      height: 12px;
-      background: hsla(var(--hue), 90%, 50%, 0.12);
-      border: 1px solid hsla(var(--hue), 90%, 70%, 0.4);
-      position: relative;
+      height: 11px;
+      border-radius: 99px;
+      background: hsla(var(--hue), 80%, 40%, 0.12);
+      border: 1px solid hsla(var(--hue), 90%, 70%, 0.35);
       overflow: hidden;
     }
 
     .fill {
       height: 100%;
       width: 0%;
-      background: linear-gradient(90deg, var(--orange), var(--cyan) 55%, #fff);
-      box-shadow: 0 0 16px var(--cyan);
+      background: linear-gradient(90deg, var(--hot), var(--glow), #fff);
+      box-shadow: 0 0 16px var(--glow);
       transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
@@ -159,36 +116,36 @@
       display: flex;
       align-items: center;
       gap: 8px;
-      font-family: Orbitron, sans-serif;
-      font-size: 11px;
+      font-family: Audiowide, sans-serif;
+      font-size: 10px;
       letter-spacing: 0.16em;
       text-transform: uppercase;
-      white-space: nowrap;
     }
 
     .dot {
       width: 9px;
       height: 9px;
+      border-radius: 50%;
       background: #ff3355;
       box-shadow: 0 0 10px #ff3355;
     }
 
     .status.on .dot {
-      background: var(--cyan);
-      box-shadow: 0 0 12px var(--cyan);
+      background: var(--glow);
+      box-shadow: 0 0 12px var(--glow);
     }
 
     .side {
-      top: 110px;
-      left: 24px;
-      width: 230px;
+      top: 108px;
+      left: 22px;
+      width: 228px;
       padding: 12px 14px 14px;
     }
 
     .kicker {
-      font-family: Orbitron, sans-serif;
       font-size: 10px;
-      letter-spacing: 0.22em;
+      letter-spacing: 0.24em;
+      text-transform: uppercase;
       color: var(--muted);
       margin-bottom: 8px;
     }
@@ -198,10 +155,56 @@
       justify-content: space-between;
       gap: 8px;
       font-size: 15px;
-      font-weight: 700;
+      font-weight: 800;
     }
 
-    .row b { color: var(--cyan); font-weight: 700; }
+    .row b { color: var(--glow); }
+
+    .last {
+      right: 22px;
+      top: 108px;
+      width: 150px;
+      padding: 10px;
+      text-align: center;
+    }
+
+    .last img, .last .orb {
+      width: 100%;
+      aspect-ratio: 1;
+      border-radius: 50%;
+      display: block;
+      object-fit: cover;
+      margin-bottom: 8px;
+      border: 2px solid hsla(var(--hue), 90%, 70%, 0.5);
+    }
+
+    .last .orb {
+      background: radial-gradient(circle at 35% 30%, #fff, var(--glow) 38%, var(--hot) 70%, #120010);
+    }
+
+    .folds {
+      position: absolute;
+      left: 50%;
+      bottom: 22px;
+      transform: translateX(-50%);
+      z-index: 8;
+      text-align: center;
+      pointer-events: none;
+      text-shadow: 0 2px 0 #000, 0 0 18px var(--glow);
+    }
+
+    .folds b {
+      display: block;
+      font-family: Audiowide, sans-serif;
+      font-size: clamp(26px, 4vw, 48px);
+      line-height: 0.9;
+    }
+
+    .folds span {
+      font-size: 11px;
+      letter-spacing: 0.4em;
+      color: var(--glow);
+    }
 
     .combo {
       top: 38%;
@@ -217,18 +220,18 @@
 
     .combo strong {
       display: block;
-      font-family: Orbitron, sans-serif;
+      font-family: Audiowide, sans-serif;
       font-size: 42px;
-      color: var(--orange);
-      text-shadow: 0 0 18px var(--orange);
+      color: var(--hot);
+      text-shadow: 0 0 18px var(--hot);
       line-height: 0.9;
     }
 
     .banner {
       left: 50%;
-      bottom: 28px;
+      bottom: 92px;
       transform: translateX(-50%) translateY(18px);
-      width: min(720px, calc(100% - 48px));
+      width: min(680px, calc(100% - 48px));
       display: flex;
       align-items: center;
       gap: 14px;
@@ -243,49 +246,27 @@
       transition: 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    .pilot {
-      position: absolute;
-      right: 24px;
-      top: 110px;
-      width: 168px;
-      padding: 8px 8px 10px;
-      z-index: 8;
-      pointer-events: none;
-    }
-
-    .pilot img {
-      width: 100%;
-      display: block;
-      mix-blend-mode: screen;
-      margin-bottom: 6px;
-      filter: hue-rotate(calc(var(--hue) * 1deg - 180deg)) saturate(1.6);
-    }
-
     .avatar {
-      width: 62px;
-      height: 62px;
+      width: 58px;
+      height: 58px;
+      border-radius: 50%;
       object-fit: cover;
-      object-position: top center;
-      background: #031018;
-      border: 1px solid var(--cyan);
       flex: 0 0 auto;
-      mix-blend-mode: screen;
+      border: 1px solid var(--glow);
     }
 
-    .who { font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
-    .name { font-family: Orbitron, sans-serif; font-size: 22px; letter-spacing: 0.06em; }
-    .meta { font-size: 16px; font-weight: 700; color: var(--cyan); }
+    .who { font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); font-weight: 800; }
+    .name { font-family: Audiowide, sans-serif; font-size: 20px; }
+    .meta { font-size: 15px; font-weight: 800; color: var(--glow); }
     .tag {
       margin-left: auto;
-      font-family: Orbitron, sans-serif;
-      color: var(--orange);
-      letter-spacing: 0.12em;
-      font-size: 14px;
-      text-align: right;
-      text-shadow: 0 0 10px var(--orange);
+      font-family: Audiowide, sans-serif;
+      color: var(--hot);
+      letter-spacing: 0.1em;
+      font-size: 13px;
     }
 
-    .cleared {
+    .bloomed {
       left: 50%;
       top: 44%;
       transform: translate(-50%, -50%) scale(0.86);
@@ -296,32 +277,31 @@
       z-index: 12;
     }
 
-    .cleared.show {
+    .bloomed.show {
       opacity: 1;
       transform: translate(-50%, -50%) scale(1);
       transition: 0.35s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    .cleared h2 {
-      font-family: Orbitron, sans-serif;
-      font-size: clamp(28px, 5vw, 56px);
-      letter-spacing: 0.18em;
-      color: var(--cyan);
-      text-shadow: 0 0 24px var(--cyan);
+    .bloomed h2 {
+      font-family: Audiowide, sans-serif;
+      font-size: clamp(28px, 5vw, 54px);
+      color: var(--glow);
+      text-shadow: 0 0 24px var(--glow);
     }
 
-    .cleared p {
+    .bloomed p {
       margin-top: 6px;
-      letter-spacing: 0.2em;
+      letter-spacing: 0.18em;
       text-transform: uppercase;
       color: var(--muted);
-      font-weight: 700;
+      font-weight: 800;
     }
 
     .settings-wrap {
       position: absolute;
-      right: 18px;
-      bottom: 18px;
+      right: 16px;
+      bottom: 16px;
       z-index: 20;
       pointer-events: auto;
     }
@@ -334,9 +314,10 @@
       place-items: center;
       border: 1px solid hsla(var(--hue), 90%, 70%, 0.45);
       background: var(--panel);
-      color: var(--cyan);
+      color: var(--glow);
       cursor: pointer;
       font-size: 18px;
+      border-radius: 50%;
     }
 
     .settings {
@@ -346,7 +327,6 @@
       margin-top: 8px;
       opacity: 0;
       pointer-events: none;
-      clip-path: none;
     }
 
     body.show-settings .settings,
@@ -359,41 +339,43 @@
     label { display: block; font-size: 12px; color: var(--muted); margin: 8px 0 4px; letter-spacing: 0.08em; text-transform: uppercase; }
     input {
       width: 100%;
-      border: 1px solid hsla(var(--hue), 90%, 70%, 0.4);
+      border: 1px solid hsla(var(--hue), 90%, 70%, 0.35);
       background: rgba(20, 6, 32, 0.8);
       color: var(--ink);
       padding: 8px 10px;
-      font: 700 14px Rajdhani, sans-serif;
+      font: 800 14px Nunito, sans-serif;
       outline: none;
+      border-radius: 10px;
     }
     .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
     .btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
     button {
-      border: 1px solid var(--cyan);
-      background: var(--cyan);
-      color: #021018;
+      border: 1px solid var(--glow);
+      background: var(--glow);
+      color: #120018;
       padding: 9px 10px;
-      font: 700 13px Orbitron, sans-serif;
+      font: 800 13px Nunito, sans-serif;
       letter-spacing: 0.06em;
       cursor: pointer;
+      border-radius: 12px;
     }
-    button.ghost { background: transparent; color: var(--cyan); }
+    button.ghost { background: transparent; color: var(--glow); }
     button.gear { padding: 0; }
     .hint { margin-top: 8px; font-size: 11px; color: var(--muted); line-height: 1.35; }
   </style>
 </head>
 <body>
   <canvas id="view"></canvas>
-  <div class="scan"></div>
+  <div class="veil"></div>
 
   <header class="hud">
     <div>
-      <div class="logo">ASTRAL</div>
-      <div class="sector" id="sectorLabel">DEPTH 01</div>
+      <div class="logo">BLOOM</div>
+      <div class="layer" id="layerLabel">Layer 01</div>
     </div>
-    <div class="energy">
-      <div class="energy-top">
-        <span>Trip energy</span>
+    <div>
+      <div class="nectar-top">
+        <span>Nectar</span>
         <span class="need" id="needText">0 / 500</span>
       </div>
       <div class="track"><div class="fill" id="fill"></div></div>
@@ -402,22 +384,23 @@
   </header>
 
   <aside class="side">
-    <div class="kicker">Top voyagers</div>
+    <div class="kicker">Gardeners</div>
     <div id="board"><div class="row"><span>Awaiting gifts</span><b></b></div></div>
   </aside>
 
-  <aside class="pilot">
-    <img id="pilotImg" src="assets/rider-cyan.png" alt="Grid racer" />
-    <div class="kicker" id="pilotLabel">Your trip</div>
+  <aside class="last">
+    <div class="orb" id="lastOrb"></div>
+    <img id="lastImg" alt="" style="display:none" />
+    <div class="kicker" id="lastLabel">The garden</div>
   </aside>
 
-  <div class="speedo" aria-hidden="true">
-    <b id="speedNum">164</b>
-    <span>WAVE</span>
+  <div class="folds" aria-hidden="true">
+    <b id="foldNum">6</b>
+    <span>FOLDS</span>
   </div>
 
   <div class="combo" id="combo">
-    <div class="kicker" id="comboWho">turbo</div>
+    <div class="kicker" id="comboWho">pulse</div>
     <strong id="comboHits">x1</strong>
     <div class="kicker">combo</div>
   </div>
@@ -429,18 +412,18 @@
       <div class="name" id="displayName">Waiting for gifts</div>
       <div class="meta" id="giftLine">Gift</div>
     </div>
-    <div class="tag" id="tag">DISC</div>
+    <div class="tag" id="tag">SEED</div>
   </aside>
 
-  <div class="cleared" id="cleared">
-    <h2>DEPTH OPEN</h2>
-    <p id="clearedSub">Next color incoming</p>
+  <div class="bloomed" id="bloomed">
+    <h2>IT BLOOMED</h2>
+    <p id="bloomedSub">A new layer opens</p>
   </div>
 
   <div class="settings-wrap" id="settings">
     <button class="gear" type="button" title="Settings">⚙</button>
     <section class="settings">
-      <div class="kicker">Trip settings</div>
+      <div class="kicker">Bloom settings</div>
       <label>WebSocket</label>
       <input id="wsUrl" value="ws://localhost:21213/" />
       <div class="grid2">
@@ -449,73 +432,53 @@
           <input id="minDiamonds" type="number" min="0" value="0" />
         </div>
         <div>
-          <label>Depth 1 energy</label>
+          <label>Layer 1 nectar</label>
           <input id="baseNeed" type="number" min="50" value="500" />
         </div>
       </div>
       <div class="btns">
         <button type="button" id="saveBtn">Save</button>
-        <button type="button" class="ghost" id="resetBtn">Reset trip</button>
+        <button type="button" class="ghost" id="resetBtn">Reset garden</button>
         <button type="button" id="demoBtn">Demo gift</button>
         <button type="button" class="ghost" id="comboBtn">Demo combo</button>
       </div>
-      <p class="hint">D = gift, C = combo, R = reset. ?overlay=1 makes the void transparent for OBS. Every gift dyes the trip a new color.</p>
+      <p class="hint">D = gift, C = combo, R = reset. ?overlay=1 is transparent for OBS. Gifts feed the kaleidoscope and dye it a new color.</p>
     </section>
   </div>
 
   <script>
     const DEFAULTS = { wsUrl: "ws://localhost:21213/", minDiamonds: 0, baseNeed: 500 };
-    const LANES = [-96, -58, -24, 24, 58, 96];
-
-    function hsl(h, s, l, a) {
-      const hue = ((h % 360) + 360) % 360;
-      if (a == null) return `hsl(${hue} ${s}% ${l}%)`;
-      return `hsl(${hue} ${s}% ${l}% / ${a})`;
-    }
-
     const params = new URLSearchParams(location.search);
     const state = loadState();
     const board = new Map();
-    const discs = [];
-    const bikes = [];
-    const voxels = [];
-    const sparks = [];
+    const spirits = [];
+    const petals = [];
+    const motes = [];
 
     let ws = null;
     let reconnectTimer = 0;
     let comboHide = 0;
     let bannerHide = 0;
-    let clearing = false;
-    let canvas, ctx, w = 0, h = 0, last = 0;
-
-    const sprites = {
-      cyan: loadImg("assets/shotaro-cyan.png"),
-      orange: loadImg("assets/shotaro-orange.png"),
-      riderCyan: loadImg("assets/rider-cyan.png"),
-      riderOrange: loadImg("assets/rider-orange.png")
-    };
+    let blooming = false;
+    let canvas, ctx, w = 0, h = 0, last = 0, overlay = false;
 
     const world = {
-      scroll: 0,
-      turbo: 0,
+      time: 0,
+      hue: 300,
+      trip: 0.22,
+      warp: 0,
+      flash: 0,
+      spin: 0.22,
       energy: state.energy || 0,
       level: state.level || 1,
-      shake: 0,
-      time: 0,
-      camX: 0,
-      steer: 0,
-      playerZ: 68,
-      playerTrail: [],
-      hue: 292,
-      trip: 0.2,
-      warp: 0,
-      flash: 0
+      lookX: 0,
+      lookY: 0
     };
 
     const els = {
       status: document.getElementById("status"),
       statusText: document.getElementById("statusText"),
-      sectorLabel: document.getElementById("sectorLabel"),
+      layerLabel: document.getElementById("layerLabel"),
       needText: document.getElementById("needText"),
       fill: document.getElementById("fill"),
       board: document.getElementById("board"),
@@ -528,41 +491,46 @@
       displayName: document.getElementById("displayName"),
       giftLine: document.getElementById("giftLine"),
       tag: document.getElementById("tag"),
-      cleared: document.getElementById("cleared"),
-      clearedSub: document.getElementById("clearedSub"),
-      pilotImg: document.getElementById("pilotImg"),
-      pilotLabel: document.getElementById("pilotLabel"),
+      bloomed: document.getElementById("bloomed"),
+      bloomedSub: document.getElementById("bloomedSub"),
+      lastOrb: document.getElementById("lastOrb"),
+      lastImg: document.getElementById("lastImg"),
+      lastLabel: document.getElementById("lastLabel"),
       settings: document.getElementById("settings"),
       wsUrl: document.getElementById("wsUrl"),
       minDiamonds: document.getElementById("minDiamonds"),
       baseNeed: document.getElementById("baseNeed"),
-      speedNum: document.getElementById("speedNum")
+      foldNum: document.getElementById("foldNum")
     };
 
-    if (params.has("overlay")) document.body.classList.add("overlay");
+    if (params.has("overlay")) {
+      document.body.classList.add("overlay");
+      overlay = true;
+    }
     if (params.has("clean")) els.settings.style.display = "none";
     if (params.has("demo")) setTimeout(() => demoGift(false), 800);
 
     canvas = document.getElementById("view");
     ctx = canvas.getContext("2d");
+    seedMotes();
     fillForm();
     renderHud();
     connect();
-    spawnBikes(8);
     window.addEventListener("resize", resize);
     resize();
     requestAnimationFrame(loop);
 
     document.getElementById("saveBtn").onclick = saveSettings;
-    document.getElementById("resetBtn").onclick = resetGrid;
+    document.getElementById("resetBtn").onclick = resetGarden;
     document.getElementById("demoBtn").onclick = () => demoGift(false);
     document.getElementById("comboBtn").onclick = () => demoGift(true);
     window.addEventListener("keydown", onKey);
     els.avatar.addEventListener("error", () => { els.avatar.style.display = "none"; });
+    els.lastImg.addEventListener("error", () => { els.lastImg.style.display = "none"; els.lastOrb.style.display = "block"; });
 
     function loadState() {
       let saved = {};
-      try { saved = JSON.parse(localStorage.getItem("lightgrid") || "{}"); } catch {}
+      try { saved = JSON.parse(localStorage.getItem("bloom") || localStorage.getItem("lightgrid") || "{}"); } catch {}
       return {
         wsUrl: params.get("ws") || saved.wsUrl || DEFAULTS.wsUrl,
         minDiamonds: num(params.get("min") ?? saved.minDiamonds, DEFAULTS.minDiamonds),
@@ -573,7 +541,7 @@
     }
 
     function persist() {
-      localStorage.setItem("lightgrid", JSON.stringify({
+      localStorage.setItem("bloom", JSON.stringify({
         wsUrl: state.wsUrl,
         minDiamonds: state.minDiamonds,
         baseNeed: state.baseNeed,
@@ -597,56 +565,50 @@
       connect(true);
     }
 
-    function resetGrid() {
+    function resetGarden() {
       world.level = 1;
       world.energy = 0;
-      world.turbo = 0;
-      world.hue = 292;
-      world.trip = 0.2;
+      world.hue = 300;
+      world.trip = 0.22;
       world.warp = 0;
       world.flash = 0;
+      world.spin = 0.22;
+      spirits.length = 0;
+      petals.length = 0;
       board.clear();
       persist();
       renderHud();
       renderBoard();
-      els.cleared.classList.remove("show");
-      clearing = false;
+      els.bloomed.classList.remove("show");
+      blooming = false;
     }
 
     function needFor(level) {
       return Math.round(state.baseNeed * Math.pow(1.5, level - 1));
     }
 
-    function theme() {
-      const h = world.hue + Math.sin(world.time * 0.35) * 8;
-      return {
-        grid: hsl(h, 95, 60),
-        hot: hsl(h + 138, 95, 58),
-        fog: hsl(h + 250, 42, 6),
-        accent: hsl(h + 70, 100, 64),
-        deep: hsl(h + 210, 55, 8)
-      };
+    function folds() {
+      return 6 + Math.min(10, (world.level - 1) * 2);
     }
 
-    function tripShift(gift, combo) {
-      const diamonds = gift.totalDiamonds || gift.diamonds || 1;
-      const jump = combo ? 18 : 137.5 + Math.min(70, diamonds * 0.35);
-      world.hue = (world.hue + jump) % 360;
-      world.trip = Math.min(1, world.trip + (combo ? 0.04 : 0.14 + Math.min(0.28, diamonds / 500)));
-      world.warp = Math.min(1.6, world.warp + (combo ? 0.08 : 0.28));
-      world.flash = combo ? 0.45 : 1;
+    function hsl(h, s, l, a) {
+      const hue = ((h % 360) + 360) % 360;
+      return a == null ? `hsl(${hue} ${s}% ${l}%)` : `hsl(${hue} ${s}% ${l}% / ${a})`;
+    }
+
+    function paintTheme() {
       document.documentElement.style.setProperty("--hue", String(Math.round(world.hue)));
+      document.documentElement.style.setProperty("--glow", hsl(world.hue, 92, 62));
+      document.documentElement.style.setProperty("--hot", hsl(world.hue + 128, 95, 58));
     }
 
     function renderHud() {
       const need = needFor(world.level);
-      els.sectorLabel.textContent = `DEPTH ${String(world.level).padStart(2, "0")}`;
+      els.layerLabel.textContent = `Layer ${String(world.level).padStart(2, "0")}`;
       els.needText.textContent = `${fmt(world.energy)} / ${fmt(need)}`;
       els.fill.style.width = Math.max(0, Math.min(100, (world.energy / need) * 100)) + "%";
-      document.documentElement.style.setProperty("--hue", String(Math.round(world.hue)));
-      const t = theme();
-      document.documentElement.style.setProperty("--cyan", t.grid);
-      document.documentElement.style.setProperty("--orange", t.hot);
+      els.foldNum.textContent = String(folds());
+      paintTheme();
     }
 
     function renderBoard() {
@@ -719,50 +681,48 @@
       const gift = normalizeGift(raw);
       if (!gift.uniqueId && !gift.nickname) return;
       if (gift.giftType === 1 && !gift.repeatEnd) {
-        world.turbo = Math.min(18, world.turbo + 1.2);
-        tripShift(gift, true);
+        dye(gift, true);
+        world.spin = Math.min(2.4, world.spin + 0.08);
         showCombo(gift);
-        sparkBurst(0, 22, 90, 8, theme().grid);
+        burst(28, world.hue, 10);
         return;
       }
       hideComboSoon();
       if (gift.totalDiamonds < state.minDiamonds) return;
-      fireDisc(gift);
+      feed(gift);
     }
 
-    function fireDisc(gift) {
-        const target = nearestBike() || { x: (Math.random() < 0.5 ? -120 : 120), z: 280 };
-        discs.push({
-          x: (Math.random() < 0.5 ? -1 : 1) * (30 + Math.random() * 24),
-          y: 36,
-          z: 100,
-        tx: target.x,
-        tz: target.z,
-        vx: 0,
-        vz: 0,
-        name: gift.nickname || gift.uniqueId,
-        uniqueId: gift.uniqueId,
+    function dye(gift, combo) {
+      const diamonds = gift.totalDiamonds || gift.diamonds || 1;
+      world.hue = (world.hue + (combo ? 16 : 137.5 + Math.min(70, diamonds * 0.3))) % 360;
+      world.trip = Math.min(1, world.trip + (combo ? 0.05 : 0.16 + Math.min(0.3, diamonds / 450)));
+      world.warp = Math.min(1.8, world.warp + (combo ? 0.1 : 0.32));
+      world.flash = combo ? 0.5 : 1;
+      paintTheme();
+    }
+
+    function feed(gift) {
+      dye(gift, false);
+      const name = gift.nickname || gift.uniqueId || "soul";
+      spirits.push({
+        name,
         giftName: gift.giftName,
-        repeatCount: gift.repeatCount,
+        uniqueId: gift.uniqueId,
         diamonds: gift.totalDiamonds,
+        repeatCount: gift.repeatCount,
         profilePictureUrl: gift.profilePictureUrl,
-        t: 0
+        hue: world.hue,
+        ang: Math.random() * Math.PI * 2,
+        rad: Math.max(w, h) * (0.48 + Math.random() * 0.12),
+        spin: (Math.random() < 0.5 ? -1 : 1) * (0.7 + Math.random() * 0.8),
+        size: 10 + Math.min(28, gift.totalDiamonds / 18)
       });
-      world.turbo = Math.min(22, world.turbo + Math.min(12, gift.totalDiamonds / 20));
-      world.shake = Math.min(14, 4 + gift.totalDiamonds / 80);
-      tripShift(gift, false);
+      world.spin = Math.min(2.6, world.spin + Math.min(0.45, gift.totalDiamonds / 80));
     }
 
-    function nearestBike() {
-      let best = null;
-      let bestZ = 1e9;
-      bikes.forEach((b) => {
-        if (b.z > 88 && b.z < bestZ) {
-          best = b;
-          bestZ = b.z;
-        }
-      });
-      return best;
+    function absorb(s) {
+      applyGift(s);
+      burst(s.size * 2.4, s.hue, 18 + Math.min(24, s.diamonds / 12));
     }
 
     function applyGift(gift) {
@@ -773,19 +733,17 @@
       renderHud();
       renderBoard();
       showBanner(gift);
-      if (!clearing && world.energy >= needFor(world.level)) clearSector(gift);
+      if (!blooming && world.energy >= needFor(world.level)) bloomOpen(gift);
     }
 
-    function clearSector(gift) {
-      clearing = true;
-      world.turbo = 22;
-      world.shake = 16;
-      world.hue = (world.hue + 80) % 360;
-      world.trip = 1;
+    function bloomOpen(gift) {
+      blooming = true;
       world.flash = 1;
-      els.clearedSub.textContent = `${gift.name} opened the next color`;
-      els.cleared.classList.add("show");
-      for (let i = 0; i < 80; i++) voxelBurst(0, 30, 120, theme().grid);
+      world.trip = 1;
+      world.hue = (world.hue + 80) % 360;
+      els.bloomedSub.textContent = `${gift.name} opened layer ${String(world.level + 1).padStart(2, "0")}`;
+      els.bloomed.classList.add("show");
+      burst(90, world.hue, 70);
       setTimeout(() => {
         world.level += 1;
         world.energy = 0;
@@ -793,31 +751,30 @@
         persist();
         renderHud();
         renderBoard();
-        spawnBikes(8);
-        els.cleared.classList.remove("show");
-        clearing = false;
+        els.bloomed.classList.remove("show");
+        blooming = false;
       }, 2600);
     }
 
     function showBanner(gift) {
-      els.who.textContent = gift.uniqueId ? `@${gift.uniqueId}` : "program";
+      els.who.textContent = gift.uniqueId ? `@${gift.uniqueId}` : "gardener";
       els.displayName.textContent = gift.name;
       els.giftLine.textContent = gift.repeatCount > 1
         ? `${gift.giftName} ×${gift.repeatCount}  ·  ${fmt(gift.diamonds)} 💎`
         : `${gift.giftName}  ·  ${fmt(gift.diamonds)} 💎`;
-      els.tag.textContent = gift.diamonds >= 300 ? "NOVA" : "DROP";
+      els.tag.textContent = gift.diamonds >= 300 ? "NOVA" : gift.diamonds >= 100 ? "BLOOM" : "SEED";
       if (gift.profilePictureUrl) {
         els.avatar.src = gift.profilePictureUrl;
-        els.avatar.style.mixBlendMode = "normal";
+        els.avatar.style.display = "block";
+        els.lastImg.src = gift.profilePictureUrl;
+        els.lastImg.style.display = "block";
+        els.lastOrb.style.display = "none";
       } else {
-        els.avatar.src = gift.diamonds >= 100 ? "assets/rider-orange.png" : "assets/rider-cyan.png";
-        els.avatar.style.mixBlendMode = "screen";
+        els.avatar.style.display = "none";
+        els.lastImg.style.display = "none";
+        els.lastOrb.style.display = "block";
       }
-      els.avatar.style.display = "block";
-      if (els.pilotImg) {
-        els.pilotImg.src = gift.diamonds >= 100 ? "assets/rider-orange.png" : "assets/rider-cyan.png";
-        els.pilotLabel.textContent = gift.name || "Voyager";
-      }
+      els.lastLabel.textContent = gift.name || "The garden";
       els.banner.classList.add("show");
       clearTimeout(bannerHide);
       bannerHide = setTimeout(() => els.banner.classList.remove("show"), 5600);
@@ -870,75 +827,32 @@
       ctx.imageSmoothingQuality = "high";
     }
 
-    function project(x, y, z) {
-      if (z < 14) return null;
-      const trip = world.trip + world.warp * 0.45;
-      const wave = Math.sin(z * 0.018 + world.time * 2.5) * (10 + trip * 34);
-      const melt = Math.cos(z * 0.012 + world.time * 1.7 + x * 0.008) * trip * 16;
-      const xx = x + wave + melt * 0.4;
-      const yy = y + Math.sin(world.time * 1.9 + z * 0.02) * trip * 7;
-      const fov = Math.max(340, h * 0.58) * (1 + trip * 0.1);
-      const horizon = h * 0.36;
-      const camH = 24;
-      const s = fov / z;
-      return {
-        x: w * 0.5 + (xx - world.camX) * s,
-        y: horizon + (camH - yy) * s * 0.9,
-        s
-      };
-    }
-
-    function spawnBikes(n) {
-      bikes.length = 0;
-      world.playerTrail = [];
-      for (let i = 0; i < n; i++) {
-        const orange = i % 2 === 1;
-        const lane = LANES[i % LANES.length];
-        const near = i < 4;
-        bikes.push({
-          x: lane,
-          targetX: lane,
-          z: near ? 92 + i * 14 : 160 + ((i - 4) * 28) % 150,
-          vz: near ? (Math.random() - 0.2) * 0.45 : (Math.random() - 0.35) * 1.1,
-          color: orange ? theme().hot : theme().grid,
-          kind: orange ? "orange" : "cyan",
-          laneTimer: 0.4 + Math.random() * 1.4,
-          lean: 0,
-          phase: Math.random() * Math.PI * 2,
-          trail: []
+    function seedMotes() {
+      motes.length = 0;
+      for (let i = 0; i < 70; i++) {
+        motes.push({
+          a: Math.random() * Math.PI * 2,
+          r: 40 + Math.random() * 420,
+          s: 0.12 + Math.random() * 0.5,
+          sz: 1 + Math.random() * 2.4,
+          h: Math.random() * 360
         });
       }
     }
 
-    function voxelBurst(x, y, z, color) {
-      for (let i = 0; i < 16; i++) {
+    function burst(radius, hue, n) {
+      for (let i = 0; i < n; i++) {
         const a = Math.random() * Math.PI * 2;
-        voxels.push({
-          x, y, z,
-          vx: Math.cos(a) * (2 + Math.random() * 6),
-          vy: 2 + Math.random() * 5,
-          vz: (Math.random() - 0.4) * 8,
-          life: 22 + Math.random() * 16,
-          color,
-          s: 4 + Math.random() * 7
+        const sp = 40 + Math.random() * 180;
+        petals.push({
+          x: w * 0.5, y: h * 0.52,
+          vx: Math.cos(a) * sp, vy: Math.sin(a) * sp,
+          life: 0.7 + Math.random() * 0.7,
+          max: 1,
+          hue: hue + Math.random() * 50,
+          sz: 3 + Math.random() * 7
         });
       }
-    }
-
-    function sparkBurst(x, y, z, n, color) {
-      for (let i = 0; i < n; i++) {
-        sparks.push({ x, y, z, vx: (Math.random() - 0.5) * 8, vy: Math.random() * 6, vz: -Math.random() * 6, life: 14, color });
-      }
-    }
-
-    function emitTrail(trail, x, z, max) {
-      trail.unshift({ x, z });
-      if (trail.length > max) trail.length = max;
-    }
-
-    function driftTrail(trail, dz) {
-      for (let i = 0; i < trail.length; i++) trail[i].z -= dz;
-      while (trail.length && trail[trail.length - 1].z < 16) trail.pop();
     }
 
     function loop(t) {
@@ -946,475 +860,219 @@
       const dt = Math.min(0.05, (t - last) / 1000);
       last = t;
       world.time += dt;
-      const pal = theme();
-      const pace = 5.4 + world.level * 0.32 + world.turbo * 0.7;
-      const frame = dt * 60;
-      const dz = pace * frame * 1.05;
-      world.scroll += pace * frame * 18;
-      world.turbo *= Math.pow(0.985, frame);
-      world.shake *= Math.pow(0.88, frame);
-      world.warp *= Math.pow(0.965, frame);
-      world.flash *= Math.pow(0.9, frame);
-      world.trip = Math.max(0.18, world.trip - dt * 0.028);
+      world.warp *= Math.pow(0.96, dt * 60);
+      world.flash *= Math.pow(0.9, dt * 60);
+      world.trip = Math.max(0.18, world.trip - dt * 0.03);
+      world.spin += (0.22 + world.trip * 0.5 - world.spin) * Math.min(1, 0.4 * dt);
 
-      const weave = Math.sin(world.time * 0.85) * 10 + Math.sin(world.time * 2.1) * 4;
-      world.steer += (weave - world.steer) * Math.min(1, 2.6 * dt);
-      world.camX += (world.steer * 0.22 - world.camX) * Math.min(1, 3.4 * dt);
+      if (overlay) ctx.clearRect(0, 0, w, h);
+      else {
+        ctx.fillStyle = hsl(world.hue + 240, 40, 4, 0.16 + (1 - world.trip) * 0.08);
+        ctx.fillRect(0, 0, w, h);
+      }
 
-      driftTrail(world.playerTrail, dz);
-      emitTrail(world.playerTrail, world.steer * 0.08, world.playerZ, 48);
-      bikes.forEach((b) => {
-        driftTrail(b.trail, dz);
-        emitTrail(b.trail, b.x, b.z, 70);
-      });
+      drawNebula();
+      drawMotes(dt);
+      drawMandala();
+      updateSpirits(dt);
+      updatePetals(dt);
+      drawFlash();
 
-      ctx.fillStyle = pal.fog;
-      ctx.fillRect(0, 0, w, h);
-      drawSky(pal);
-      drawTunnel(pal);
-      drawRoad(pal);
-      drawOrbs(pal);
-      drawTrail(world.playerTrail, 0, 22);
-      bikes.forEach((b, i) => drawTrail(b.trail, b.kind === "orange" ? 140 : 36 + i * 18, 20));
-      updateBikes(dt, pal);
-      updateDiscs(frame, pal);
-      updateVoxels(frame);
-      drawPlayer(pal);
-      drawSparks(frame);
-      drawMotion(pace);
-      drawFlash(pal);
-
-      const wave = Math.round(88 + world.trip * 80 + pace * 4 + Math.sin(world.time * 7) * 3);
-      if (els.speedNum) els.speedNum.textContent = String(wave);
-
-      const rumble = 0.5 + world.turbo * 0.16 + world.shake * 0.22 + world.flash * 2;
-      const dx = Math.sin(world.time * 29) * rumble;
-      const dy = Math.cos(world.time * 23) * rumble * 0.45;
-      const roll = world.steer * 0.04 + Math.sin(world.time * 1.6) * (0.4 + world.trip * 1.2);
-      canvas.style.transform = `translate(${dx}px, ${dy}px) rotate(${roll}deg)`;
-      canvas.style.filter = `saturate(${1.35 + world.trip * 1.1 + world.flash * 0.4}) contrast(${1.08 + world.flash * 0.2})`;
-
+      const rumble = world.flash * 4 + world.warp * 2;
+      canvas.style.transform = `translate(${Math.sin(world.time * 21) * rumble}px, ${Math.cos(world.time * 17) * rumble * 0.4}px)`;
+      canvas.style.filter = `saturate(${1.25 + world.trip * 0.9 + world.flash * 0.5}) contrast(${1.05 + world.flash * 0.15})`;
       requestAnimationFrame(loop);
     }
 
-    function drawSky(pal) {
-      const hue = world.hue;
-      const g = ctx.createLinearGradient(0, 0, 0, h);
-      g.addColorStop(0, hsl(hue + 240, 55, 8));
-      g.addColorStop(0.35, hsl(hue + 300, 50, 12));
-      g.addColorStop(0.7, hsl(hue + 20, 40, 10));
-      g.addColorStop(1, hsl(hue + 80, 45, 6));
-      ctx.fillStyle = g;
-      ctx.fillRect(0, 0, w, h);
+    function drawNebula() {
       ctx.save();
       ctx.globalCompositeOperation = "lighter";
-      for (let i = 0; i < 5; i++) {
-        const cx = w * (0.2 + (i * 0.17)) + Math.sin(world.time * 0.4 + i) * 40;
-        const cy = h * (0.18 + (i % 3) * 0.1) + Math.cos(world.time * 0.3 + i) * 24;
-        const rad = (120 + i * 50) * (1 + world.trip * 0.4);
-        const blob = ctx.createRadialGradient(cx, cy, 8, cx, cy, rad);
-        blob.addColorStop(0, hsl(hue + i * 52, 100, 62, 0.28 + world.flash * 0.2));
-        blob.addColorStop(1, "transparent");
-        ctx.fillStyle = blob;
-        ctx.fillRect(cx - rad, cy - rad, rad * 2, rad * 2);
-      }
-      ctx.restore();
-    }
-
-    function drawTunnel() {
-      const cx = w * 0.5 - world.camX * 0.8;
-      const cy = h * 0.36;
-      ctx.save();
-      ctx.globalCompositeOperation = "lighter";
-      const n = 22;
-      for (let i = 0; i < n; i++) {
-        const t = (i / n + world.time * (0.18 + world.trip * 0.12)) % 1;
-        const r = 16 + t * t * Math.max(w, h) * 0.92;
-        ctx.strokeStyle = hsl(world.hue + i * 16 + world.time * 18, 95, 58, (1 - t) * (0.18 + world.trip * 0.22));
-        ctx.lineWidth = 2 + world.trip * 7 + world.flash * 4;
-        ctx.beginPath();
-        ctx.ellipse(cx, cy, r, r * (0.32 + world.trip * 0.08), Math.sin(world.time + i) * 0.12, 0, Math.PI * 2);
-        ctx.stroke();
-      }
-      ctx.restore();
-      ctx.globalAlpha = 1;
-    }
-
-    function drawRoad(pal) {
-      const a = project(-210, 0, 28);
-      const b = project(210, 0, 28);
-      const c = project(210, 0, 920);
-      const d = project(-210, 0, 920);
-      if (!a || !b || !c || !d) return;
-      ctx.beginPath();
-      ctx.moveTo(a.x, a.y);
-      ctx.lineTo(b.x, b.y);
-      ctx.lineTo(c.x, c.y);
-      ctx.lineTo(d.x, d.y);
-      ctx.closePath();
-      const wash = ctx.createLinearGradient(0, a.y, 0, h);
-      wash.addColorStop(0, hsl(world.hue + 200, 40, 12, 0.55));
-      wash.addColorStop(0.5, hsl(world.hue, 50, 10, 0.5));
-      wash.addColorStop(1, hsl(world.hue + 80, 45, 8, 0.7));
-      ctx.fillStyle = wash;
-      ctx.fill();
-      ctx.save();
-      ctx.globalCompositeOperation = "lighter";
-      const dash = 22;
-      const off = world.scroll % (dash * 2);
-      for (let z = 34 + (dash * 2 - off); z < 760; z += dash * 2) {
-        const fade = Math.max(0.15, 1 - z / 860);
-        for (let k = -3; k <= 3; k++) {
-          const x = k * 28;
-          const p0 = project(x, 0.8, z);
-          const p1 = project(x, 0.8, z + dash * 0.7);
-          if (!p0 || !p1) continue;
-          ctx.strokeStyle = hsl(world.hue + k * 28 + z * 0.2, 95, 62, 0.55 * fade);
-          ctx.lineWidth = Math.max(2, p0.s * (3.2 + world.trip * 2));
-          ctx.beginPath();
-          ctx.moveTo(p0.x, p0.y);
-          ctx.lineTo(p1.x, p1.y);
-          ctx.stroke();
-        }
-      }
-      ctx.restore();
-      ctx.globalAlpha = 1;
-    }
-
-    function drawOrbs() {
-      ctx.save();
-      ctx.globalCompositeOperation = "lighter";
-      const span = 900;
-      for (let i = 0; i < 14; i++) {
-        const z = ((i * 64) - world.scroll * 0.7 % span + span) % span + 40;
-        const side = i % 2 ? 1 : -1;
-        const x = side * (110 + (i * 23) % 80);
-        const y = 18 + Math.sin(world.time * 1.4 + i) * 22;
-        const p = project(x, y, z);
-        if (!p) continue;
-        const fade = Math.max(0, 1 - z / 700);
-        const rad = (8 + (i % 4) * 6) * p.s * (1 + world.trip);
-        const g = ctx.createRadialGradient(p.x, p.y, 1, p.x, p.y, rad);
-        g.addColorStop(0, hsl(world.hue + i * 31, 100, 70, 0.85 * fade));
-        g.addColorStop(0.35, hsl(world.hue + i * 31 + 40, 95, 55, 0.35 * fade));
+      for (let i = 0; i < 4; i++) {
+        const cx = w * 0.5 + Math.sin(world.time * 0.25 + i * 1.7) * w * 0.12;
+        const cy = h * 0.52 + Math.cos(world.time * 0.2 + i) * h * 0.08;
+        const rad = (180 + i * 70) * (1 + world.trip * 0.35);
+        const g = ctx.createRadialGradient(cx, cy, 8, cx, cy, rad);
+        g.addColorStop(0, hsl(world.hue + i * 48, 100, 62, 0.16 + world.flash * 0.12));
         g.addColorStop(1, "transparent");
         ctx.fillStyle = g;
         ctx.beginPath();
-        ctx.arc(p.x, p.y, rad, 0, Math.PI * 2);
+        ctx.arc(cx, cy, rad, 0, Math.PI * 2);
         ctx.fill();
       }
       ctx.restore();
-      ctx.globalAlpha = 1;
     }
 
-    function drawTrail(trail, hueOff, height) {
-      if (!trail || trail.length < 2) return;
+    function drawMotes(dt) {
+      const cx = w * 0.5, cy = h * 0.52;
       ctx.save();
       ctx.globalCompositeOperation = "lighter";
-      ctx.lineJoin = "round";
-      ctx.lineCap = "round";
-      for (let i = 0; i < trail.length - 1; i++) {
-        const a = trail[i];
-        const b = trail[i + 1];
-        if (a.z < 18 || b.z < 18) continue;
-        const fade = 1 - i / (trail.length - 1);
-        const col = hsl(world.hue + hueOff + i * 14, 95, 60);
-        const ht = height * (0.5 + 0.8 * fade) * (1 + world.trip * 0.35);
-        const t0 = project(a.x, ht, a.z);
-        const t1 = project(b.x, ht, b.z);
-        const g0 = project(a.x, 0, a.z);
-        const g1 = project(b.x, 0, b.z);
-        if (!t0 || !t1 || !g0 || !g1) continue;
-        ctx.fillStyle = col;
-        ctx.globalAlpha = 0.2 + 0.45 * fade;
+      motes.forEach((m) => {
+        m.a += m.s * dt * (0.4 + world.spin);
+        const x = cx + Math.cos(m.a + world.time * 0.1) * m.r * (0.7 + 0.3 * Math.sin(world.time + m.h));
+        const y = cy + Math.sin(m.a + world.time * 0.1) * m.r * 0.62;
+        ctx.fillStyle = hsl(world.hue + m.h * 0.2, 90, 70, 0.35);
         ctx.beginPath();
-        ctx.moveTo(g0.x, g0.y);
-        ctx.lineTo(t0.x, t0.y);
-        ctx.lineTo(t1.x, t1.y);
-        ctx.lineTo(g1.x, g1.y);
-        ctx.closePath();
+        ctx.arc(x, y, m.sz, 0, Math.PI * 2);
         ctx.fill();
-        ctx.strokeStyle = col;
-        ctx.globalAlpha = 0.75 * fade;
-        ctx.lineWidth = Math.max(2.2, (g0.s + g1.s) * (2.8 + world.trip * 2));
-        ctx.beginPath();
-        ctx.moveTo(t0.x, t0.y);
-        ctx.lineTo(t1.x, t1.y);
-        ctx.stroke();
-      }
+      });
       ctx.restore();
-      ctx.globalAlpha = 1;
     }
 
-    function drawMotion(pace) {
-      ctx.save();
-      ctx.globalCompositeOperation = "lighter";
+    function drawMandala() {
       const cx = w * 0.5;
-      const cy = h * 0.36;
-      for (let i = 0; i < 16; i++) {
-        const t = (world.time * (1.6 + world.trip) + i * 0.14) % 1;
-        const ang = (i / 16) * Math.PI * 2 + world.time * 0.4;
-        const r0 = 20 + t * 80;
-        const r1 = r0 + 40 + t * 220;
-        ctx.strokeStyle = hsl(world.hue + i * 22, 95, 65, (1 - t) * 0.22);
-        ctx.lineWidth = 1 + t * 3;
+      const cy = h * 0.52;
+      const n = folds();
+      const pulse = 1 + Math.sin(world.time * 3.2) * 0.06 + world.flash * 0.12;
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(world.time * world.spin);
+      ctx.globalCompositeOperation = "lighter";
+
+      for (let k = 0; k < n; k++) {
+        ctx.save();
+        ctx.rotate((Math.PI * 2 / n) * k);
+        if (k % 2) ctx.scale(-1, 1);
+        drawWedge(pulse);
+        ctx.restore();
+      }
+
+      drawCore(pulse);
+      ctx.restore();
+    }
+
+    function drawWedge(pulse) {
+      const len = Math.min(w, h) * (0.28 + world.trip * 0.1) * pulse;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      for (let arm = 0; arm < 3; arm++) {
         ctx.beginPath();
-        ctx.moveTo(cx + Math.cos(ang) * r0, cy + Math.sin(ang) * r0 * 0.4);
-        ctx.lineTo(cx + Math.cos(ang) * r1, cy + Math.sin(ang) * r1 * 0.45 + t * 80);
+        for (let i = 0; i <= 36; i++) {
+          const t = i / 36;
+          const a = t * 0.42 + arm * 0.08;
+          const r = 24 + t * len;
+          const wob = Math.sin(t * (7 + arm * 2) + world.time * (2.2 + arm) + world.warp * 4) * (8 + world.trip * 22) * t;
+          const x = Math.cos(a) * r + Math.cos(a + Math.PI / 2) * wob;
+          const y = Math.sin(a) * r + Math.sin(a + Math.PI / 2) * wob;
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.strokeStyle = hsl(world.hue + arm * 40 + world.time * 12, 95, 62, 0.55);
+        ctx.lineWidth = 2.2 + world.trip * 3.5 + arm;
         ctx.stroke();
       }
+
+      ctx.fillStyle = hsl(world.hue + 70, 100, 64, 0.12 + world.trip * 0.1);
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.quadraticCurveTo(len * 0.35, len * 0.12, len * 0.72, 8);
+      ctx.quadraticCurveTo(len * 0.3, -10, 0, 0);
+      ctx.fill();
+    }
+
+    function drawCore(pulse) {
+      const r = (34 + world.trip * 22 + world.flash * 16) * pulse;
+      const g = ctx.createRadialGradient(world.lookX * 8, world.lookY * 8, 4, 0, 0, r * 1.6);
+      g.addColorStop(0, "#fff");
+      g.addColorStop(0.14, hsl(world.hue + 40, 100, 78));
+      g.addColorStop(0.38, hsl(world.hue, 95, 52));
+      g.addColorStop(0.7, hsl(world.hue + 200, 80, 18, 0.85));
+      g.addColorStop(1, "transparent");
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(0, 0, r * 1.55, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.strokeStyle = hsl(world.hue + 90, 100, 70, 0.7);
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(0, 0, r * 0.92, 0, Math.PI * 2);
+      ctx.stroke();
+
+      ctx.fillStyle = hsl(world.hue + 220, 50, 8, 0.9);
+      ctx.beginPath();
+      ctx.arc(world.lookX * 6, world.lookY * 6, r * 0.28, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#fff";
+      ctx.beginPath();
+      ctx.arc(world.lookX * 6 - 4, world.lookY * 6 - 5, r * 0.08, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function updateSpirits(dt) {
+      const cx = w * 0.5, cy = h * 0.52;
+      let lx = 0, ly = 0, nlook = 0;
+      ctx.save();
+      ctx.globalCompositeOperation = "lighter";
+      for (let i = spirits.length - 1; i >= 0; i--) {
+        const s = spirits[i];
+        s.ang += s.spin * dt;
+        s.rad -= (48 + world.spin * 36 + Math.min(70, s.diamonds * 0.15)) * dt;
+        const x = cx + Math.cos(s.ang) * s.rad;
+        const y = cy + Math.sin(s.ang) * s.rad * 0.88;
+        lx += (x - cx) / Math.max(40, s.rad);
+        ly += (y - cy) / Math.max(40, s.rad);
+        nlook += 1;
+
+        const glow = ctx.createRadialGradient(x, y, 1, x, y, s.size * 2.4);
+        glow.addColorStop(0, "#fff");
+        glow.addColorStop(0.25, hsl(s.hue, 100, 62));
+        glow.addColorStop(1, "transparent");
+        ctx.fillStyle = glow;
+        ctx.beginPath();
+        ctx.arc(x, y, s.size * 2.4, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = "#fff";
+        ctx.font = `800 ${Math.max(11, Math.min(18, s.size))}px Nunito, sans-serif`;
+        ctx.textAlign = "center";
+        ctx.fillText(s.name, x, y - s.size - 8);
+
+        if (s.rad < 36) {
+          absorb(s);
+          spirits.splice(i, 1);
+        }
+      }
       ctx.restore();
-      ctx.globalAlpha = 1;
+      if (nlook) {
+        world.lookX += (lx / nlook - world.lookX) * 0.12;
+        world.lookY += (ly / nlook - world.lookY) * 0.12;
+      } else {
+        world.lookX *= 0.96;
+        world.lookY *= 0.96;
+      }
+    }
+
+    function updatePetals(dt) {
+      ctx.save();
+      ctx.globalCompositeOperation = "lighter";
+      for (let i = petals.length - 1; i >= 0; i--) {
+        const p = petals[i];
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.vx *= 0.98;
+        p.vy *= 0.98;
+        p.life -= dt;
+        const a = Math.max(0, p.life / (p.max || 1));
+        ctx.fillStyle = hsl(p.hue, 95, 62, a);
+        ctx.beginPath();
+        ctx.ellipse(p.x, p.y, p.sz * (1.6 - a), p.sz * a * 1.8, world.time, 0, Math.PI * 2);
+        ctx.fill();
+        if (p.life <= 0) petals.splice(i, 1);
+      }
+      ctx.restore();
     }
 
     function drawFlash() {
       if (world.flash < 0.04) return;
       ctx.save();
       ctx.globalCompositeOperation = "lighter";
-      const g = ctx.createRadialGradient(w * 0.5, h * 0.42, 10, w * 0.5, h * 0.42, w * 0.7);
-      g.addColorStop(0, hsl(world.hue, 100, 70, world.flash * 0.35));
-      g.addColorStop(0.4, hsl(world.hue + 60, 100, 55, world.flash * 0.12));
+      const g = ctx.createRadialGradient(w * 0.5, h * 0.52, 10, w * 0.5, h * 0.52, Math.max(w, h) * 0.7);
+      g.addColorStop(0, hsl(world.hue, 100, 72, world.flash * 0.32));
+      g.addColorStop(0.45, hsl(world.hue + 70, 100, 55, world.flash * 0.1));
       g.addColorStop(1, "transparent");
       ctx.fillStyle = g;
       ctx.fillRect(0, 0, w, h);
       ctx.restore();
-    }
-
-    function updateBikes(dt, pal) {
-      bikes.sort((a, b) => b.z - a.z);
-      bikes.forEach((b) => {
-        b.laneTimer -= dt;
-        if (b.laneTimer <= 0) {
-          const next = LANES[Math.floor(Math.random() * LANES.length)];
-          b.targetX = next === b.targetX ? LANES[(LANES.indexOf(next) + 1) % LANES.length] : next;
-          b.laneTimer = 0.7 + Math.random() * 1.6;
-        }
-        const dx = b.targetX - b.x;
-        b.x += dx * Math.min(1, 3.1 * dt);
-        b.lean += (dx * 0.09 - b.lean) * Math.min(1, 8 * dt);
-        b.z += (b.vz + Math.sin(world.time * 1.5 + b.phase) * 0.28) * dt * 78;
-        if (b.z < 86) {
-          b.z = 88;
-          b.vz = Math.abs(b.vz) + 0.4;
-        } else if (b.z > 320) {
-          b.z = 300;
-          b.vz = -Math.abs(b.vz) - 0.25;
-        }
-        b.color = b.kind === "orange" ? pal.hot : pal.grid;
-        drawGlow(b.x, b.z, b.color);
-        drawLightCycle(b.x, b.z, b.color, { lean: b.lean, kind: b.kind });
-      });
-    }
-
-    function quad(a, b, c, d, fill, stroke, width) {
-      if (!a || !b || !c || !d) return;
-      ctx.beginPath();
-      ctx.moveTo(a.x, a.y);
-      ctx.lineTo(b.x, b.y);
-      ctx.lineTo(c.x, c.y);
-      ctx.lineTo(d.x, d.y);
-      ctx.closePath();
-      if (fill) {
-        ctx.fillStyle = fill;
-        ctx.fill();
-      }
-      if (stroke) {
-        ctx.strokeStyle = stroke;
-        ctx.lineWidth = width || 1.4;
-        ctx.stroke();
-      }
-    }
-
-    function lineTo(a, b, stroke, width) {
-      if (!a || !b) return;
-      ctx.beginPath();
-      ctx.moveTo(a.x, a.y);
-      ctx.lineTo(b.x, b.y);
-      ctx.strokeStyle = stroke;
-      ctx.lineWidth = width || 1.5;
-      ctx.stroke();
-    }
-
-    function loadImg(src) {
-      const img = new Image();
-      img.onload = () => { img.keyed = keyBlack(img); };
-      img.src = src;
-      return img;
-    }
-
-    function keyBlack(img) {
-      const c = document.createElement("canvas");
-      c.width = img.naturalWidth;
-      c.height = img.naturalHeight;
-      const x = c.getContext("2d");
-      x.drawImage(img, 0, 0);
-      const data = x.getImageData(0, 0, c.width, c.height);
-      const d = data.data;
-      for (let i = 0; i < d.length; i += 4) {
-        const max = Math.max(d[i], d[i + 1], d[i + 2]);
-        if (max < 14) d[i + 3] = 0;
-      }
-      x.putImageData(data, 0, 0);
-      return c;
-    }
-
-    function spriteReady(img) {
-      return !!(img && img.keyed);
-    }
-
-    function drawGlow(x, z, color) {
-      const p = project(x, 0.4, z);
-      if (!p) return;
-      ctx.save();
-      ctx.globalCompositeOperation = "lighter";
-      const g = ctx.createRadialGradient(p.x, p.y, 2, p.x, p.y, 26 * p.s);
-      g.addColorStop(0, "rgba(255,255,255,0.85)");
-      g.addColorStop(0.18, color);
-      g.addColorStop(1, "transparent");
-      ctx.fillStyle = g;
-      ctx.globalAlpha = 0.9;
-      ctx.beginPath();
-      ctx.ellipse(p.x, p.y, 16 * p.s, 6 * p.s, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.restore();
-    }
-
-    function drawSpriteBike(x, z, img, player, lean, kind) {
-      const p = project(x, 3.2, z);
-      if (!p || !spriteReady(img)) return false;
-      const src = img.keyed;
-      const hgt = p.s * (player ? 34 : 28);
-      const wid = hgt * (src.width / src.height);
-      const base = kind === "orange" ? 28 : 186;
-      ctx.save();
-      ctx.translate(p.x, p.y);
-      ctx.rotate((lean || 0) * 0.018);
-      ctx.filter = `hue-rotate(${world.hue - base}deg) saturate(${1.5 + world.trip})`;
-      ctx.drawImage(src, -wid * 0.5, -hgt * 0.92, wid, hgt);
-      ctx.filter = "none";
-      ctx.restore();
-      return true;
-    }
-
-    function drawLightCycle(x, zRear, color, opts) {
-      const player = !!(opts && opts.player);
-      const lean = (opts && opts.lean) || 0;
-      const kind = (opts && opts.kind) || (player ? "cyan" : "orange");
-      const img = kind === "orange" ? sprites.orange : sprites.cyan;
-      if (drawSpriteBike(x, zRear, img, player, lean, kind)) return;
-      const p = project(x, 8, zRear);
-      if (!p) return;
-      ctx.save();
-      ctx.translate(p.x, p.y);
-      ctx.fillStyle = color;
-      ctx.globalAlpha = 0.9;
-      ctx.beginPath();
-      ctx.ellipse(0, 0, 7 * p.s, 11 * p.s, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.restore();
-    }
-
-    function drawPlayer(pal) {
-      const lean = world.steer * 0.12 + Math.sin(world.time * 3.4) * 1.4;
-      drawGlow(0, world.playerZ, pal.grid);
-      drawLightCycle(0, world.playerZ, pal.grid, { player: true, lean, kind: "cyan" });
-    }
-
-    function updateDiscs(dt, pal) {
-      for (let i = discs.length - 1; i >= 0; i--) {
-        const d = discs[i];
-        d.t += dt * 0.045;
-        const u = Math.min(1, d.t);
-        d.x += (d.tx - d.x) * 0.12 * dt;
-        d.y += (28 - d.y) * 0.08 * dt;
-        d.z += (d.tz - d.z) * 0.12 * dt;
-        drawDisc(d, pal);
-        if (u >= 1 || Math.hypot(d.x - d.tx, d.z - d.tz) < 18) {
-          impact(d, pal);
-          discs.splice(i, 1);
-        }
-      }
-    }
-
-    function drawDisc(d, pal) {
-      const p = project(d.x, d.y, d.z);
-      if (!p) return;
-      const s = Math.max(6, 18 * p.s);
-      ctx.save();
-      ctx.translate(p.x, p.y);
-      ctx.rotate(world.scroll * 0.01);
-      ctx.strokeStyle = pal.hot;
-      ctx.shadowColor = pal.hot;
-      ctx.shadowBlur = 18;
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.arc(0, 0, s, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.arc(0, 0, s * 0.45, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.restore();
-      ctx.save();
-      ctx.fillStyle = "#fff";
-      ctx.shadowColor = pal.grid;
-      ctx.shadowBlur = 12;
-      ctx.font = `700 ${Math.max(12, 14 * p.s)}px Orbitron, sans-serif`;
-      ctx.textAlign = "center";
-      ctx.fillText(d.name, p.x, p.y - s - 8);
-      ctx.restore();
-    }
-
-    function impact(d, pal) {
-      const bike = bikes.find((b) => Math.hypot(b.x - d.tx, b.z - d.tz) < 40);
-      if (bike) {
-        voxelBurst(bike.x, 12, bike.z, bike.color);
-        bike.z = 200 + Math.random() * 40;
-        bike.x = LANES[Math.floor(Math.random() * LANES.length)];
-        bike.targetX = bike.x;
-        bike.vz = 0.3 + Math.random() * 0.7;
-        bike.trail = [];
-      } else {
-        voxelBurst(d.tx, 24, d.tz, pal.hot);
-      }
-      sparkBurst(d.tx, 24, d.tz, 18, pal.grid);
-      applyGift(d);
-    }
-
-    function updateVoxels(dt) {
-      for (let i = voxels.length - 1; i >= 0; i--) {
-        const v = voxels[i];
-        v.x += v.vx * dt;
-        v.y += v.vy * dt;
-        v.z += v.vz * dt;
-        v.vy -= 0.18 * dt;
-        v.life -= dt;
-        const p = project(v.x, v.y, v.z);
-        if (p) {
-          ctx.fillStyle = v.color;
-          ctx.globalAlpha = Math.max(0, v.life / 28);
-          ctx.fillRect(p.x, p.y, v.s * p.s, v.s * p.s);
-        }
-        if (v.life <= 0) voxels.splice(i, 1);
-      }
-      ctx.globalAlpha = 1;
-    }
-
-    function drawSparks(dt) {
-      for (let i = sparks.length - 1; i >= 0; i--) {
-        const s = sparks[i];
-        s.x += s.vx * dt;
-        s.y += s.vy * dt;
-        s.z += s.vz * dt;
-        s.life -= dt;
-        const p = project(s.x, s.y, s.z);
-        if (p) {
-          ctx.fillStyle = s.color;
-          ctx.globalAlpha = Math.max(0, s.life / 14);
-          ctx.fillRect(p.x, p.y, 2, 2);
-        }
-        if (s.life <= 0) sparks.splice(i, 1);
-      }
-      ctx.globalAlpha = 1;
     }
 
     function demoGift(combo) {
@@ -1454,7 +1112,7 @@
       if (e.target && /input|textarea/i.test(e.target.tagName)) return;
       if (e.key === "d" || e.key === "D") demoGift(false);
       if (e.key === "c" || e.key === "C") demoGift(true);
-      if (e.key === "r" || e.key === "R") resetGrid();
+      if (e.key === "r" || e.key === "R") resetGarden();
       if (e.key === "s" || e.key === "S") document.body.classList.toggle("show-settings");
     }
   </script>
