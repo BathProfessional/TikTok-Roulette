@@ -3,17 +3,18 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>LIGHTGRID</title>
+      <title>ASTRAL</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --cyan: #00e8ff;
-      --orange: #ff6a00;
-      --ink: #e9fbff;
-      --muted: rgba(180, 240, 255, 0.55);
-      --panel: rgba(0, 10, 18, 0.72);
+      --hue: 292;
+      --cyan: hsl(var(--hue) 92% 62%);
+      --orange: hsl(calc(var(--hue) + 132) 95% 58%);
+      --ink: #fff5ff;
+      --muted: rgba(255, 210, 255, 0.62);
+      --panel: rgba(18, 4, 28, 0.55);
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -45,7 +46,26 @@
       inset: 0;
       pointer-events: none;
       z-index: 6;
-      background: radial-gradient(ellipse at center, transparent 58%, rgba(0, 0, 0, 0.38) 100%);
+      background:
+        radial-gradient(ellipse at 50% 40%, transparent 30%, hsla(var(--hue), 80%, 12%, 0.28) 100%),
+        repeating-conic-gradient(from 0deg at 50% 42%, transparent 0 12deg, hsla(var(--hue), 90%, 60%, 0.03) 12deg 13deg);
+      mix-blend-mode: screen;
+      animation: spinveil 28s linear infinite;
+    }
+
+    @keyframes spinveil {
+      to { filter: hue-rotate(360deg); }
+    }
+
+    .hud, .side, .banner, .combo, .cleared, .settings, .pilot {
+      position: absolute;
+      z-index: 8;
+      background: var(--panel);
+      border: 1px solid hsla(var(--hue), 90%, 70%, 0.45);
+      box-shadow: 0 0 28px hsla(var(--hue), 90%, 50%, 0.22), inset 0 0 18px hsla(calc(var(--hue) + 80), 90%, 50%, 0.08);
+      border-radius: 22px 8px 22px 8px;
+      backdrop-filter: blur(12px) saturate(1.4);
+      pointer-events: none;
     }
 
     .speedo {
@@ -56,7 +76,7 @@
       z-index: 8;
       text-align: center;
       pointer-events: none;
-      text-shadow: 0 2px 0 #000, 0 0 18px rgba(0, 232, 255, 0.7);
+      text-shadow: 0 2px 0 #000, 0 0 18px var(--cyan);
     }
 
     .speedo b {
@@ -76,17 +96,6 @@
       color: var(--cyan);
     }
 
-    .hud, .side, .banner, .combo, .cleared, .settings, .pilot {
-      position: absolute;
-      z-index: 8;
-      background: var(--panel);
-      border: 1px solid rgba(0, 232, 255, 0.45);
-      box-shadow: 0 0 18px rgba(0, 232, 255, 0.12), inset 0 0 18px rgba(0, 232, 255, 0.05);
-      clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px);
-      backdrop-filter: blur(10px);
-      pointer-events: none;
-    }
-
     .hud {
       top: 22px;
       left: 24px;
@@ -101,10 +110,10 @@
     .logo {
       font-family: Orbitron, sans-serif;
       font-weight: 900;
-      letter-spacing: 0.28em;
-      font-size: 18px;
+      letter-spacing: 0.12em;
+      font-size: 22px;
       color: var(--cyan);
-      text-shadow: 0 0 12px var(--cyan);
+      text-shadow: 0 0 18px var(--cyan), 0 0 42px var(--orange);
     }
 
     .sector {
@@ -132,8 +141,8 @@
 
     .track {
       height: 12px;
-      background: rgba(0, 232, 255, 0.08);
-      border: 1px solid rgba(0, 232, 255, 0.35);
+      background: hsla(var(--hue), 90%, 50%, 0.12);
+      border: 1px solid hsla(var(--hue), 90%, 70%, 0.4);
       position: relative;
       overflow: hidden;
     }
@@ -141,7 +150,7 @@
     .fill {
       height: 100%;
       width: 0%;
-      background: linear-gradient(90deg, #007c88, var(--cyan) 60%, #fff);
+      background: linear-gradient(90deg, var(--orange), var(--cyan) 55%, #fff);
       box-shadow: 0 0 16px var(--cyan);
       transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
     }
@@ -249,6 +258,7 @@
       display: block;
       mix-blend-mode: screen;
       margin-bottom: 6px;
+      filter: hue-rotate(calc(var(--hue) * 1deg - 180deg)) saturate(1.6);
     }
 
     .avatar {
@@ -322,7 +332,7 @@
       margin-left: auto;
       display: grid;
       place-items: center;
-      border: 1px solid rgba(0, 232, 255, 0.45);
+      border: 1px solid hsla(var(--hue), 90%, 70%, 0.45);
       background: var(--panel);
       color: var(--cyan);
       cursor: pointer;
@@ -349,8 +359,8 @@
     label { display: block; font-size: 12px; color: var(--muted); margin: 8px 0 4px; letter-spacing: 0.08em; text-transform: uppercase; }
     input {
       width: 100%;
-      border: 1px solid rgba(0, 232, 255, 0.35);
-      background: rgba(0, 20, 28, 0.8);
+      border: 1px solid hsla(var(--hue), 90%, 70%, 0.4);
+      background: rgba(20, 6, 32, 0.8);
       color: var(--ink);
       padding: 8px 10px;
       font: 700 14px Rajdhani, sans-serif;
@@ -378,12 +388,12 @@
 
   <header class="hud">
     <div>
-      <div class="logo">LIGHTGRID</div>
-      <div class="sector" id="sectorLabel">SECTOR 01</div>
+      <div class="logo">ASTRAL</div>
+      <div class="sector" id="sectorLabel">DEPTH 01</div>
     </div>
     <div class="energy">
       <div class="energy-top">
-        <span>Sector energy</span>
+        <span>Trip energy</span>
         <span class="need" id="needText">0 / 500</span>
       </div>
       <div class="track"><div class="fill" id="fill"></div></div>
@@ -392,18 +402,18 @@
   </header>
 
   <aside class="side">
-    <div class="kicker">Top programs</div>
+    <div class="kicker">Top voyagers</div>
     <div id="board"><div class="row"><span>Awaiting gifts</span><b></b></div></div>
   </aside>
 
   <aside class="pilot">
     <img id="pilotImg" src="assets/rider-cyan.png" alt="Grid racer" />
-    <div class="kicker" id="pilotLabel">Your program</div>
+    <div class="kicker" id="pilotLabel">Your trip</div>
   </aside>
 
   <div class="speedo" aria-hidden="true">
     <b id="speedNum">164</b>
-    <span>MPH</span>
+    <span>WAVE</span>
   </div>
 
   <div class="combo" id="combo">
@@ -423,14 +433,14 @@
   </aside>
 
   <div class="cleared" id="cleared">
-    <h2>SECTOR CLEARED</h2>
-    <p id="clearedSub">Next grid incoming</p>
+    <h2>DEPTH OPEN</h2>
+    <p id="clearedSub">Next color incoming</p>
   </div>
 
   <div class="settings-wrap" id="settings">
     <button class="gear" type="button" title="Settings">⚙</button>
     <section class="settings">
-      <div class="kicker">Grid settings</div>
+      <div class="kicker">Trip settings</div>
       <label>WebSocket</label>
       <input id="wsUrl" value="ws://localhost:21213/" />
       <div class="grid2">
@@ -439,30 +449,29 @@
           <input id="minDiamonds" type="number" min="0" value="0" />
         </div>
         <div>
-          <label>Sector 1 energy</label>
+          <label>Depth 1 energy</label>
           <input id="baseNeed" type="number" min="50" value="500" />
         </div>
       </div>
       <div class="btns">
         <button type="button" id="saveBtn">Save</button>
-        <button type="button" class="ghost" id="resetBtn">Reset grid</button>
+        <button type="button" class="ghost" id="resetBtn">Reset trip</button>
         <button type="button" id="demoBtn">Demo gift</button>
         <button type="button" class="ghost" id="comboBtn">Demo combo</button>
       </div>
-      <p class="hint">D = gift, C = combo, R = reset. ?overlay=1 makes the void transparent for OBS. Beat sectors with TikTok gifts.</p>
+      <p class="hint">D = gift, C = combo, R = reset. ?overlay=1 makes the void transparent for OBS. Every gift dyes the trip a new color.</p>
     </section>
   </div>
 
   <script>
     const DEFAULTS = { wsUrl: "ws://localhost:21213/", minDiamonds: 0, baseNeed: 500 };
     const LANES = [-96, -58, -24, 24, 58, 96];
-    const PALETTES = [
-      { grid: "#00e8ff", hot: "#ff6a00", fog: "#07090f" },
-      { grid: "#3df0ff", hot: "#ff8a1a", fog: "#070a12" },
-      { grid: "#ff6a00", hot: "#00e8ff", fog: "#0c0806" },
-      { grid: "#ff2bd6", hot: "#00e8ff", fog: "#0a0610" },
-      { grid: "#ffffff", hot: "#00e8ff", fog: "#07070c" }
-    ];
+
+    function hsl(h, s, l, a) {
+      const hue = ((h % 360) + 360) % 360;
+      if (a == null) return `hsl(${hue} ${s}% ${l}%)`;
+      return `hsl(${hue} ${s}% ${l}% / ${a})`;
+    }
 
     const params = new URLSearchParams(location.search);
     const state = loadState();
@@ -496,7 +505,11 @@
       camX: 0,
       steer: 0,
       playerZ: 68,
-      playerTrail: []
+      playerTrail: [],
+      hue: 292,
+      trip: 0.2,
+      warp: 0,
+      flash: 0
     };
 
     const els = {
@@ -588,6 +601,10 @@
       world.level = 1;
       world.energy = 0;
       world.turbo = 0;
+      world.hue = 292;
+      world.trip = 0.2;
+      world.warp = 0;
+      world.flash = 0;
       board.clear();
       persist();
       renderHud();
@@ -601,14 +618,32 @@
     }
 
     function theme() {
-      return PALETTES[(world.level - 1) % PALETTES.length];
+      const h = world.hue + Math.sin(world.time * 0.35) * 8;
+      return {
+        grid: hsl(h, 95, 60),
+        hot: hsl(h + 138, 95, 58),
+        fog: hsl(h + 250, 42, 6),
+        accent: hsl(h + 70, 100, 64),
+        deep: hsl(h + 210, 55, 8)
+      };
+    }
+
+    function tripShift(gift, combo) {
+      const diamonds = gift.totalDiamonds || gift.diamonds || 1;
+      const jump = combo ? 18 : 137.5 + Math.min(70, diamonds * 0.35);
+      world.hue = (world.hue + jump) % 360;
+      world.trip = Math.min(1, world.trip + (combo ? 0.04 : 0.14 + Math.min(0.28, diamonds / 500)));
+      world.warp = Math.min(1.6, world.warp + (combo ? 0.08 : 0.28));
+      world.flash = combo ? 0.45 : 1;
+      document.documentElement.style.setProperty("--hue", String(Math.round(world.hue)));
     }
 
     function renderHud() {
       const need = needFor(world.level);
-      els.sectorLabel.textContent = `SECTOR ${String(world.level).padStart(2, "0")}`;
+      els.sectorLabel.textContent = `DEPTH ${String(world.level).padStart(2, "0")}`;
       els.needText.textContent = `${fmt(world.energy)} / ${fmt(need)}`;
       els.fill.style.width = Math.max(0, Math.min(100, (world.energy / need) * 100)) + "%";
+      document.documentElement.style.setProperty("--hue", String(Math.round(world.hue)));
       const t = theme();
       document.documentElement.style.setProperty("--cyan", t.grid);
       document.documentElement.style.setProperty("--orange", t.hot);
@@ -685,6 +720,7 @@
       if (!gift.uniqueId && !gift.nickname) return;
       if (gift.giftType === 1 && !gift.repeatEnd) {
         world.turbo = Math.min(18, world.turbo + 1.2);
+        tripShift(gift, true);
         showCombo(gift);
         sparkBurst(0, 22, 90, 8, theme().grid);
         return;
@@ -714,6 +750,7 @@
       });
       world.turbo = Math.min(22, world.turbo + Math.min(12, gift.totalDiamonds / 20));
       world.shake = Math.min(14, 4 + gift.totalDiamonds / 80);
+      tripShift(gift, false);
     }
 
     function nearestBike() {
@@ -743,7 +780,10 @@
       clearing = true;
       world.turbo = 22;
       world.shake = 16;
-      els.clearedSub.textContent = `${gift.name} opened the next grid`;
+      world.hue = (world.hue + 80) % 360;
+      world.trip = 1;
+      world.flash = 1;
+      els.clearedSub.textContent = `${gift.name} opened the next color`;
       els.cleared.classList.add("show");
       for (let i = 0; i < 80; i++) voxelBurst(0, 30, 120, theme().grid);
       setTimeout(() => {
@@ -765,7 +805,7 @@
       els.giftLine.textContent = gift.repeatCount > 1
         ? `${gift.giftName} ×${gift.repeatCount}  ·  ${fmt(gift.diamonds)} 💎`
         : `${gift.giftName}  ·  ${fmt(gift.diamonds)} 💎`;
-      els.tag.textContent = gift.diamonds >= 300 ? "OVERCLOCK" : "IDENTITY DISC";
+      els.tag.textContent = gift.diamonds >= 300 ? "NOVA" : "DROP";
       if (gift.profilePictureUrl) {
         els.avatar.src = gift.profilePictureUrl;
         els.avatar.style.mixBlendMode = "normal";
@@ -776,7 +816,7 @@
       els.avatar.style.display = "block";
       if (els.pilotImg) {
         els.pilotImg.src = gift.diamonds >= 100 ? "assets/rider-orange.png" : "assets/rider-cyan.png";
-        els.pilotLabel.textContent = gift.name || "Grid racer";
+        els.pilotLabel.textContent = gift.name || "Voyager";
       }
       els.banner.classList.add("show");
       clearTimeout(bannerHide);
@@ -832,13 +872,18 @@
 
     function project(x, y, z) {
       if (z < 14) return null;
-      const fov = Math.max(340, h * 0.58);
+      const trip = world.trip + world.warp * 0.45;
+      const wave = Math.sin(z * 0.018 + world.time * 2.5) * (10 + trip * 34);
+      const melt = Math.cos(z * 0.012 + world.time * 1.7 + x * 0.008) * trip * 16;
+      const xx = x + wave + melt * 0.4;
+      const yy = y + Math.sin(world.time * 1.9 + z * 0.02) * trip * 7;
+      const fov = Math.max(340, h * 0.58) * (1 + trip * 0.1);
       const horizon = h * 0.36;
       const camH = 24;
       const s = fov / z;
       return {
-        x: w * 0.5 + (x - world.camX) * s,
-        y: horizon + (camH - y) * s * 0.9,
+        x: w * 0.5 + (xx - world.camX) * s,
+        y: horizon + (camH - yy) * s * 0.9,
         s
       };
     }
@@ -908,6 +953,9 @@
       world.scroll += pace * frame * 18;
       world.turbo *= Math.pow(0.985, frame);
       world.shake *= Math.pow(0.88, frame);
+      world.warp *= Math.pow(0.965, frame);
+      world.flash *= Math.pow(0.9, frame);
+      world.trip = Math.max(0.18, world.trip - dt * 0.028);
 
       const weave = Math.sin(world.time * 0.85) * 10 + Math.sin(world.time * 2.1) * 4;
       world.steer += (weave - world.steer) * Math.min(1, 2.6 * dt);
@@ -923,43 +971,73 @@
       ctx.fillStyle = pal.fog;
       ctx.fillRect(0, 0, w, h);
       drawSky(pal);
-      drawCity(pal);
+      drawTunnel(pal);
       drawRoad(pal);
-      drawLamps(pal);
-      drawTrail(world.playerTrail, pal.grid, 20);
-      bikes.forEach((b) => drawTrail(b.trail, b.color, 18));
+      drawOrbs(pal);
+      drawTrail(world.playerTrail, 0, 22);
+      bikes.forEach((b, i) => drawTrail(b.trail, b.kind === "orange" ? 140 : 36 + i * 18, 20));
       updateBikes(dt, pal);
       updateDiscs(frame, pal);
       updateVoxels(frame);
       drawPlayer(pal);
       drawSparks(frame);
       drawMotion(pace);
+      drawFlash(pal);
 
-      const mph = Math.round(148 + pace * 7 + Math.sin(world.time * 9) * 3);
-      if (els.speedNum) els.speedNum.textContent = String(mph);
+      const wave = Math.round(88 + world.trip * 80 + pace * 4 + Math.sin(world.time * 7) * 3);
+      if (els.speedNum) els.speedNum.textContent = String(wave);
 
-      const rumble = 0.45 + world.turbo * 0.16 + world.shake * 0.22;
+      const rumble = 0.5 + world.turbo * 0.16 + world.shake * 0.22 + world.flash * 2;
       const dx = Math.sin(world.time * 29) * rumble;
-      const dy = Math.cos(world.time * 23) * rumble * 0.4;
-      const roll = world.steer * 0.035 + Math.sin(world.time * 2.4) * 0.15;
+      const dy = Math.cos(world.time * 23) * rumble * 0.45;
+      const roll = world.steer * 0.04 + Math.sin(world.time * 1.6) * (0.4 + world.trip * 1.2);
       canvas.style.transform = `translate(${dx}px, ${dy}px) rotate(${roll}deg)`;
+      canvas.style.filter = `saturate(${1.35 + world.trip * 1.1 + world.flash * 0.4}) contrast(${1.08 + world.flash * 0.2})`;
 
       requestAnimationFrame(loop);
     }
 
     function drawSky(pal) {
-      const g = ctx.createLinearGradient(0, 0, 0, h * 0.5);
-      g.addColorStop(0, "#02040a");
-      g.addColorStop(0.62, "#0a1020");
-      g.addColorStop(1, "#16110c");
+      const hue = world.hue;
+      const g = ctx.createLinearGradient(0, 0, 0, h);
+      g.addColorStop(0, hsl(hue + 240, 55, 8));
+      g.addColorStop(0.35, hsl(hue + 300, 50, 12));
+      g.addColorStop(0.7, hsl(hue + 20, 40, 10));
+      g.addColorStop(1, hsl(hue + 80, 45, 6));
       ctx.fillStyle = g;
-      ctx.fillRect(0, 0, w, h * 0.5);
-      const hg = ctx.createRadialGradient(w / 2, h * 0.36, 6, w / 2, h * 0.36, w * 0.5);
-      hg.addColorStop(0, "rgba(255, 150, 55, 0.42)");
-      hg.addColorStop(0.22, pal.grid + "33");
-      hg.addColorStop(1, "transparent");
-      ctx.fillStyle = hg;
-      ctx.fillRect(0, 0, w, h * 0.5);
+      ctx.fillRect(0, 0, w, h);
+      ctx.save();
+      ctx.globalCompositeOperation = "lighter";
+      for (let i = 0; i < 5; i++) {
+        const cx = w * (0.2 + (i * 0.17)) + Math.sin(world.time * 0.4 + i) * 40;
+        const cy = h * (0.18 + (i % 3) * 0.1) + Math.cos(world.time * 0.3 + i) * 24;
+        const rad = (120 + i * 50) * (1 + world.trip * 0.4);
+        const blob = ctx.createRadialGradient(cx, cy, 8, cx, cy, rad);
+        blob.addColorStop(0, hsl(hue + i * 52, 100, 62, 0.28 + world.flash * 0.2));
+        blob.addColorStop(1, "transparent");
+        ctx.fillStyle = blob;
+        ctx.fillRect(cx - rad, cy - rad, rad * 2, rad * 2);
+      }
+      ctx.restore();
+    }
+
+    function drawTunnel() {
+      const cx = w * 0.5 - world.camX * 0.8;
+      const cy = h * 0.36;
+      ctx.save();
+      ctx.globalCompositeOperation = "lighter";
+      const n = 22;
+      for (let i = 0; i < n; i++) {
+        const t = (i / n + world.time * (0.18 + world.trip * 0.12)) % 1;
+        const r = 16 + t * t * Math.max(w, h) * 0.92;
+        ctx.strokeStyle = hsl(world.hue + i * 16 + world.time * 18, 95, 58, (1 - t) * (0.18 + world.trip * 0.22));
+        ctx.lineWidth = 2 + world.trip * 7 + world.flash * 4;
+        ctx.beginPath();
+        ctx.ellipse(cx, cy, r, r * (0.32 + world.trip * 0.08), Math.sin(world.time + i) * 0.12, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      ctx.restore();
+      ctx.globalAlpha = 1;
     }
 
     function drawRoad(pal) {
@@ -974,159 +1052,65 @@
       ctx.lineTo(c.x, c.y);
       ctx.lineTo(d.x, d.y);
       ctx.closePath();
-      const asphalt = ctx.createLinearGradient(0, a.y, 0, Math.min(h, c.y + 80));
-      asphalt.addColorStop(0, "#2a3140");
-      asphalt.addColorStop(0.45, "#171b24");
-      asphalt.addColorStop(1, "#0e1016");
-      ctx.fillStyle = asphalt;
-      ctx.fill();
-      const wet = ctx.createLinearGradient(w * 0.5, h * 0.36, w * 0.5, h);
-      wet.addColorStop(0, "rgba(180, 220, 255, 0.02)");
-      wet.addColorStop(0.55, "rgba(0, 232, 255, 0.05)");
-      wet.addColorStop(1, "rgba(255, 255, 255, 0.07)");
-      ctx.fillStyle = wet;
+      const wash = ctx.createLinearGradient(0, a.y, 0, h);
+      wash.addColorStop(0, hsl(world.hue + 200, 40, 12, 0.55));
+      wash.addColorStop(0.5, hsl(world.hue, 50, 10, 0.5));
+      wash.addColorStop(1, hsl(world.hue + 80, 45, 8, 0.7));
+      ctx.fillStyle = wash;
       ctx.fill();
       ctx.save();
       ctx.globalCompositeOperation = "lighter";
-      [[-200, pal.grid], [200, pal.hot]].forEach(([x, col]) => {
-        const p0 = project(x, 0.4, 32);
-        const p1 = project(x, 0.4, 880);
-        if (!p0 || !p1) return;
-        ctx.strokeStyle = col;
-        ctx.globalAlpha = 0.55;
-        ctx.lineWidth = Math.max(2, p0.s * 2.4);
-        ctx.beginPath();
-        ctx.moveTo(p0.x, p0.y);
-        ctx.lineTo(p1.x, p1.y);
-        ctx.stroke();
-      });
-      ctx.restore();
-      const dash = 26;
+      const dash = 22;
       const off = world.scroll % (dash * 2);
-      ctx.lineCap = "butt";
       for (let z = 34 + (dash * 2 - off); z < 760; z += dash * 2) {
-        const fade = Math.max(0.2, 1 - z / 860);
-        const p0 = project(-2.2, 0.6, z);
-        const p1 = project(-2.2, 0.6, z + dash * 0.55);
-        const q0 = project(2.2, 0.6, z);
-        const q1 = project(2.2, 0.6, z + dash * 0.55);
-        if (p0 && p1) {
-          ctx.globalAlpha = 0.95 * fade;
-          ctx.strokeStyle = "#ffe56a";
-          ctx.lineWidth = Math.max(3, p0.s * 4.2);
+        const fade = Math.max(0.15, 1 - z / 860);
+        for (let k = -3; k <= 3; k++) {
+          const x = k * 28;
+          const p0 = project(x, 0.8, z);
+          const p1 = project(x, 0.8, z + dash * 0.7);
+          if (!p0 || !p1) continue;
+          ctx.strokeStyle = hsl(world.hue + k * 28 + z * 0.2, 95, 62, 0.55 * fade);
+          ctx.lineWidth = Math.max(2, p0.s * (3.2 + world.trip * 2));
           ctx.beginPath();
           ctx.moveTo(p0.x, p0.y);
           ctx.lineTo(p1.x, p1.y);
           ctx.stroke();
         }
-        if (q0 && q1) {
-          ctx.globalAlpha = 0.95 * fade;
-          ctx.strokeStyle = "#ffe56a";
-          ctx.lineWidth = Math.max(3, q0.s * 4.2);
-          ctx.beginPath();
-          ctx.moveTo(q0.x, q0.y);
-          ctx.lineTo(q1.x, q1.y);
-          ctx.stroke();
-        }
-        [-58, 58].forEach((x) => {
-          const a0 = project(x, 0.6, z);
-          const a1 = project(x, 0.6, z + dash * 0.7);
-          if (!a0 || !a1) return;
-          ctx.globalAlpha = 0.8 * fade;
-          ctx.strokeStyle = "#f4f7ff";
-          ctx.lineWidth = Math.max(2.2, a0.s * 3.2);
-          ctx.beginPath();
-          ctx.moveTo(a0.x, a0.y);
-          ctx.lineTo(a1.x, a1.y);
-          ctx.stroke();
-        });
       }
+      ctx.restore();
       ctx.globalAlpha = 1;
     }
 
-    function drawCity(pal) {
-      const span = 2160;
-      for (let i = 0; i < 22; i++) {
-        const z = ((i * 98) - (world.scroll * 0.85) % span + span) % span + 120;
-        const side = i % 2 === 0 ? -1 : 1;
-        const x = side * (168 + (i * 29) % 70);
-        const bw = 24 + (i * 13) % 38;
-        const bh = 80 + (i * 53) % 230;
-        const b0 = project(x, 0, z);
-        const b1 = project(x + bw * side, 0, z);
-        const t0 = project(x, bh, z);
-        const t1 = project(x + bw * side, bh, z);
-        if (!b0 || !t0 || !b1 || !t1) continue;
-        const fade = Math.max(0.12, 1 - z / 980);
-        ctx.globalAlpha = fade;
-        ctx.fillStyle = i % 3 === 0 ? "#10141c" : "#0b0e16";
-        ctx.beginPath();
-        ctx.moveTo(b0.x, b0.y);
-        ctx.lineTo(t0.x, t0.y);
-        ctx.lineTo(t1.x, t1.y);
-        ctx.lineTo(b1.x, b1.y);
-        ctx.closePath();
-        ctx.fill();
-        const rows = 5 + (i % 6);
-        const cols = 3 + (i % 3);
-        for (let r = 0; r < rows; r++) {
-          for (let c = 0; c < cols; c++) {
-            if ((r + c + i) % 5 === 0) continue;
-            const wx = x + side * bw * ((c + 0.25) / cols);
-            const wy = bh * (1 - (r + 0.25) / rows);
-            const pt = project(wx, wy, z);
-            if (!pt) continue;
-            ctx.globalAlpha = fade * 0.62;
-            ctx.fillStyle = (r + i) % 7 === 0 ? pal.hot : (i % 2 ? "#ffe3a0" : "#cfe4ff");
-            ctx.fillRect(pt.x, pt.y, Math.max(1.1, 2.1 * pt.s), Math.max(1.4, 2.8 * pt.s));
-          }
-        }
-      }
-      ctx.globalAlpha = 1;
-    }
-
-    function drawLamps() {
-      const span = 720;
+    function drawOrbs() {
       ctx.save();
       ctx.globalCompositeOperation = "lighter";
-      for (let i = 0; i < 10; i++) {
-        const z = ((i * 72) - world.scroll % span + span) % span + 50;
-        const side = i % 2 === 0 ? -1 : 1;
-        const x = side * 138;
-        const base = project(x, 0, z);
-        const top = project(x, 34, z);
-        const pool = project(x * 0.82, 0.2, z + 8);
-        if (!base || !top) continue;
-        const fade = Math.max(0, 1 - z / 620);
-        ctx.globalAlpha = 0.35 * fade;
-        ctx.strokeStyle = "#9aa3b2";
-        ctx.lineWidth = Math.max(1, 1.6 * (base.s || 1));
+      const span = 900;
+      for (let i = 0; i < 14; i++) {
+        const z = ((i * 64) - world.scroll * 0.7 % span + span) % span + 40;
+        const side = i % 2 ? 1 : -1;
+        const x = side * (110 + (i * 23) % 80);
+        const y = 18 + Math.sin(world.time * 1.4 + i) * 22;
+        const p = project(x, y, z);
+        if (!p) continue;
+        const fade = Math.max(0, 1 - z / 700);
+        const rad = (8 + (i % 4) * 6) * p.s * (1 + world.trip);
+        const g = ctx.createRadialGradient(p.x, p.y, 1, p.x, p.y, rad);
+        g.addColorStop(0, hsl(world.hue + i * 31, 100, 70, 0.85 * fade));
+        g.addColorStop(0.35, hsl(world.hue + i * 31 + 40, 95, 55, 0.35 * fade));
+        g.addColorStop(1, "transparent");
+        ctx.fillStyle = g;
         ctx.beginPath();
-        ctx.moveTo(base.x, base.y);
-        ctx.lineTo(top.x, top.y);
-        ctx.stroke();
-        if (pool) {
-          const glow = ctx.createRadialGradient(pool.x, pool.y, 2, pool.x, pool.y, 38 * pool.s);
-          glow.addColorStop(0, "rgba(255, 186, 92, 0.28)");
-          glow.addColorStop(1, "transparent");
-          ctx.fillStyle = glow;
-          ctx.beginPath();
-          ctx.ellipse(pool.x, pool.y, 22 * pool.s, 8 * pool.s, 0, 0, Math.PI * 2);
-          ctx.fill();
-        }
-        ctx.fillStyle = "#ffb45a";
-        ctx.globalAlpha = 0.55 * fade;
-        ctx.beginPath();
-        ctx.arc(top.x, top.y, Math.max(1.4, 2.4 * top.s), 0, Math.PI * 2);
+        ctx.arc(p.x, p.y, rad, 0, Math.PI * 2);
         ctx.fill();
       }
       ctx.restore();
       ctx.globalAlpha = 1;
     }
 
-    function drawTrail(trail, color, height) {
+    function drawTrail(trail, hueOff, height) {
       if (!trail || trail.length < 2) return;
       ctx.save();
+      ctx.globalCompositeOperation = "lighter";
       ctx.lineJoin = "round";
       ctx.lineCap = "round";
       for (let i = 0; i < trail.length - 1; i++) {
@@ -1134,27 +1118,15 @@
         const b = trail[i + 1];
         if (a.z < 18 || b.z < 18) continue;
         const fade = 1 - i / (trail.length - 1);
-        const ht = height * (0.55 + 0.7 * fade);
-        const half = 4.2;
-        const g0 = project(a.x, 0, a.z);
-        const g1 = project(b.x, 0, b.z);
+        const col = hsl(world.hue + hueOff + i * 14, 95, 60);
+        const ht = height * (0.5 + 0.8 * fade) * (1 + world.trip * 0.35);
         const t0 = project(a.x, ht, a.z);
         const t1 = project(b.x, ht, b.z);
-        const l0 = project(a.x - half, 0, a.z);
-        const r0 = project(a.x + half, 0, a.z);
-        const l1 = project(b.x - half, 0, b.z);
-        const r1 = project(b.x + half, 0, b.z);
-        if (!g0 || !g1 || !t0 || !t1 || !l0 || !r0 || !l1 || !r1) continue;
-        ctx.fillStyle = color;
-        ctx.globalAlpha = 0.22 * fade;
-        ctx.beginPath();
-        ctx.moveTo(l0.x, l0.y);
-        ctx.lineTo(r0.x, r0.y);
-        ctx.lineTo(r1.x, r1.y);
-        ctx.lineTo(l1.x, l1.y);
-        ctx.closePath();
-        ctx.fill();
-        ctx.globalAlpha = 0.32 + 0.55 * fade;
+        const g0 = project(a.x, 0, a.z);
+        const g1 = project(b.x, 0, b.z);
+        if (!t0 || !t1 || !g0 || !g1) continue;
+        ctx.fillStyle = col;
+        ctx.globalAlpha = 0.2 + 0.45 * fade;
         ctx.beginPath();
         ctx.moveTo(g0.x, g0.y);
         ctx.lineTo(t0.x, t0.y);
@@ -1162,16 +1134,9 @@
         ctx.lineTo(g1.x, g1.y);
         ctx.closePath();
         ctx.fill();
-        ctx.strokeStyle = "#fff";
-        ctx.globalAlpha = 0.5 * fade;
-        ctx.lineWidth = Math.max(1.4, (g0.s + g1.s) * 1.6);
-        ctx.beginPath();
-        ctx.moveTo(t0.x, t0.y);
-        ctx.lineTo(t1.x, t1.y);
-        ctx.stroke();
-        ctx.strokeStyle = color;
-        ctx.globalAlpha = 0.85 * fade;
-        ctx.lineWidth = Math.max(2.4, (g0.s + g1.s) * 3.4);
+        ctx.strokeStyle = col;
+        ctx.globalAlpha = 0.75 * fade;
+        ctx.lineWidth = Math.max(2.2, (g0.s + g1.s) * (2.8 + world.trip * 2));
         ctx.beginPath();
         ctx.moveTo(t0.x, t0.y);
         ctx.lineTo(t1.x, t1.y);
@@ -1184,21 +1149,35 @@
     function drawMotion(pace) {
       ctx.save();
       ctx.globalCompositeOperation = "lighter";
-      for (let i = 0; i < 12; i++) {
-        const t = (world.time * 3.1 + i * 0.19) % 1;
-        const side = i % 2 ? 1 : -1;
-        const y = h * (0.58 + t * 0.44);
-        const x0 = w * 0.5 + side * w * (0.32 + t * 0.26);
-        ctx.strokeStyle = i % 3 === 0 ? "#fff" : "#8be7ff";
-        ctx.globalAlpha = (1 - t) * 0.16 * Math.min(1, pace / 7);
-        ctx.lineWidth = 1 + t * 2;
+      const cx = w * 0.5;
+      const cy = h * 0.36;
+      for (let i = 0; i < 16; i++) {
+        const t = (world.time * (1.6 + world.trip) + i * 0.14) % 1;
+        const ang = (i / 16) * Math.PI * 2 + world.time * 0.4;
+        const r0 = 20 + t * 80;
+        const r1 = r0 + 40 + t * 220;
+        ctx.strokeStyle = hsl(world.hue + i * 22, 95, 65, (1 - t) * 0.22);
+        ctx.lineWidth = 1 + t * 3;
         ctx.beginPath();
-        ctx.moveTo(x0, y);
-        ctx.lineTo(x0 + side * (50 + t * 110), y + 10);
+        ctx.moveTo(cx + Math.cos(ang) * r0, cy + Math.sin(ang) * r0 * 0.4);
+        ctx.lineTo(cx + Math.cos(ang) * r1, cy + Math.sin(ang) * r1 * 0.45 + t * 80);
         ctx.stroke();
       }
       ctx.restore();
       ctx.globalAlpha = 1;
+    }
+
+    function drawFlash() {
+      if (world.flash < 0.04) return;
+      ctx.save();
+      ctx.globalCompositeOperation = "lighter";
+      const g = ctx.createRadialGradient(w * 0.5, h * 0.42, 10, w * 0.5, h * 0.42, w * 0.7);
+      g.addColorStop(0, hsl(world.hue, 100, 70, world.flash * 0.35));
+      g.addColorStop(0.4, hsl(world.hue + 60, 100, 55, world.flash * 0.12));
+      g.addColorStop(1, "transparent");
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, w, h);
+      ctx.restore();
     }
 
     function updateBikes(dt, pal) {
@@ -1300,16 +1279,19 @@
       ctx.restore();
     }
 
-    function drawSpriteBike(x, z, img, player, lean) {
+    function drawSpriteBike(x, z, img, player, lean, kind) {
       const p = project(x, 3.2, z);
       if (!p || !spriteReady(img)) return false;
       const src = img.keyed;
       const hgt = p.s * (player ? 34 : 28);
       const wid = hgt * (src.width / src.height);
+      const base = kind === "orange" ? 28 : 186;
       ctx.save();
       ctx.translate(p.x, p.y);
       ctx.rotate((lean || 0) * 0.018);
+      ctx.filter = `hue-rotate(${world.hue - base}deg) saturate(${1.5 + world.trip})`;
       ctx.drawImage(src, -wid * 0.5, -hgt * 0.92, wid, hgt);
+      ctx.filter = "none";
       ctx.restore();
       return true;
     }
@@ -1319,7 +1301,7 @@
       const lean = (opts && opts.lean) || 0;
       const kind = (opts && opts.kind) || (player ? "cyan" : "orange");
       const img = kind === "orange" ? sprites.orange : sprites.cyan;
-      if (drawSpriteBike(x, zRear, img, player, lean)) return;
+      if (drawSpriteBike(x, zRear, img, player, lean, kind)) return;
       const p = project(x, 8, zRear);
       if (!p) return;
       ctx.save();
