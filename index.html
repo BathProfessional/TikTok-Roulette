@@ -185,7 +185,7 @@
     .folds {
       position: absolute;
       left: 50%;
-      bottom: 22px;
+      bottom: 118px;
       transform: translateX(-50%);
       z-index: 8;
       text-align: center;
@@ -337,7 +337,7 @@
     }
 
     label { display: block; font-size: 12px; color: var(--muted); margin: 8px 0 4px; letter-spacing: 0.08em; text-transform: uppercase; }
-    input {
+    input, select {
       width: 100%;
       border: 1px solid hsla(var(--hue), 90%, 70%, 0.35);
       background: rgba(20, 6, 32, 0.8);
@@ -362,6 +362,56 @@
     button.ghost { background: transparent; color: var(--glow); }
     button.gear { padding: 0; }
     .hint { margin-top: 8px; font-size: 11px; color: var(--muted); line-height: 1.35; }
+
+    .patterns {
+      position: absolute;
+      left: 22px;
+      right: 86px;
+      bottom: 16px;
+      z-index: 8;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      pointer-events: none;
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 6px;
+      pointer-events: auto;
+    }
+
+    button.chip {
+      color: #fff;
+      padding: 7px 11px;
+      font: 800 11px Nunito, sans-serif;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      border-radius: 99px;
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      text-shadow: 0 1px 2px #000;
+    }
+
+    .chip.on {
+      outline: 2px solid #fff;
+      box-shadow: 0 0 18px var(--glow);
+    }
+
+    .chip.armed {
+      outline: 2px dashed #fff;
+    }
+
+    .armed-line {
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      color: #fff;
+      text-shadow: 0 2px 10px #000, 0 0 16px var(--glow);
+      min-height: 1.2em;
+    }
   </style>
 </head>
 <body>
@@ -397,6 +447,11 @@
   <div class="folds" aria-hidden="true">
     <b id="foldNum">6</b>
     <span>FOLDS</span>
+  </div>
+
+  <div class="patterns">
+    <div class="chips" id="chips"></div>
+    <div class="armed-line" id="armedLine">Chat a color, then gift to drop it</div>
   </div>
 
   <div class="combo" id="combo">
@@ -436,21 +491,38 @@
           <input id="baseNeed" type="number" min="50" value="500" />
         </div>
       </div>
+      <label>Default pattern</label>
+      <select id="patternSelect"></select>
       <div class="btns">
         <button type="button" id="saveBtn">Save</button>
         <button type="button" class="ghost" id="resetBtn">Reset garden</button>
         <button type="button" id="demoBtn">Demo gift</button>
         <button type="button" class="ghost" id="comboBtn">Demo combo</button>
       </div>
-      <p class="hint">D = gift, C = combo, R = reset. ?overlay=1 is transparent for OBS. Gifts feed the kaleidoscope and dye it a new color.</p>
+      <p class="hint">Viewers chat a color name, then gift to activate it. Click a chip or 1–0 to arm the next demo gift. D = gift, C = combo, R = reset. ?overlay=1 is transparent for OBS.</p>
     </section>
   </div>
 
   <script>
-    const DEFAULTS = { wsUrl: "ws://localhost:21213/", minDiamonds: 0, baseNeed: 500 };
+    const PATTERNS = [
+      { id: "rainbow", name: "Rainbow", hues: [0, 48, 96, 156, 204, 268, 318], sat: 96, lit: 60, speed: 22, aliases: ["rgb", "pride", "spectrum"] },
+      { id: "lava", name: "Lava", hues: [2, 14, 26, 38], sat: 100, lit: 52, speed: 10, aliases: ["fire", "magma", "ember", "flame"] },
+      { id: "ocean", name: "Ocean", hues: [172, 188, 202, 216], sat: 90, lit: 54, speed: 8, aliases: ["water", "sea", "tide", "aqua"] },
+      { id: "toxic", name: "Toxic", hues: [88, 118, 292, 318], sat: 100, lit: 56, speed: 16, aliases: ["neon", "slime", "radioactive"] },
+      { id: "galaxy", name: "Galaxy", hues: [248, 268, 292, 322], sat: 92, lit: 58, speed: 9, aliases: ["space", "cosmos", "nebula", "void"] },
+      { id: "candy", name: "Candy", hues: [318, 338, 196, 210], sat: 88, lit: 68, speed: 14, aliases: ["cotton", "pastel", "sweet", "pink"] },
+      { id: "gold", name: "Gold", hues: [36, 44, 52, 28], sat: 98, lit: 58, speed: 7, aliases: ["honey", "sun", "amber"] },
+      { id: "ice", name: "Ice", hues: [178, 190, 202, 210], sat: 70, lit: 78, speed: 6, aliases: ["frost", "snow", "freeze", "crystal"] },
+      { id: "aurora", name: "Aurora", hues: [132, 158, 276, 304], sat: 90, lit: 58, speed: 11, aliases: ["northern", "borealis"] },
+      { id: "sunset", name: "Sunset", hues: [12, 28, 332, 350], sat: 96, lit: 56, speed: 9, aliases: ["dusk", "dawn", "peach"] },
+      { id: "acid", name: "Acid", hues: [62, 78, 92, 48], sat: 100, lit: 54, speed: 18, aliases: ["lime", "chartreuse"] },
+      { id: "prism", name: "Prism", hues: [0, 180, 60, 240], sat: 100, lit: 58, speed: 20, aliases: ["split", "dual", "complement"] }
+    ];
+    const DEFAULTS = { wsUrl: "ws://localhost:21213/", minDiamonds: 0, baseNeed: 500, pattern: "rainbow" };
     const params = new URLSearchParams(location.search);
     const state = loadState();
     const board = new Map();
+    const picks = new Map();
     const spirits = [];
     const petals = [];
     const motes = [];
@@ -472,7 +544,9 @@
       energy: state.energy || 0,
       level: state.level || 1,
       lookX: 0,
-      lookY: 0
+      lookY: 0,
+      awake: 0.28,
+      patternId: state.pattern || "rainbow"
     };
 
     const els = {
@@ -500,6 +574,9 @@
       wsUrl: document.getElementById("wsUrl"),
       minDiamonds: document.getElementById("minDiamonds"),
       baseNeed: document.getElementById("baseNeed"),
+      patternSelect: document.getElementById("patternSelect"),
+      chips: document.getElementById("chips"),
+      armedLine: document.getElementById("armedLine"),
       foldNum: document.getElementById("foldNum")
     };
 
@@ -514,7 +591,10 @@
     ctx = canvas.getContext("2d");
     seedMotes();
     fillForm();
+    armStreamer(state.pattern, false);
+    renderChips();
     renderHud();
+    setArmedLine("Chat a color, then gift to drop it");
     connect();
     window.addEventListener("resize", resize);
     resize();
@@ -524,6 +604,13 @@
     document.getElementById("resetBtn").onclick = resetGarden;
     document.getElementById("demoBtn").onclick = () => demoGift(false);
     document.getElementById("comboBtn").onclick = () => demoGift(true);
+    els.patternSelect.onchange = () => {
+      const p = findPattern(els.patternSelect.value);
+      if (!p) return;
+      state.pattern = p.id;
+      persist();
+      armStreamer(p.id, true);
+    };
     window.addEventListener("keydown", onKey);
     els.avatar.addEventListener("error", () => { els.avatar.style.display = "none"; });
     els.lastImg.addEventListener("error", () => { els.lastImg.style.display = "none"; els.lastOrb.style.display = "block"; });
@@ -535,6 +622,7 @@
         wsUrl: params.get("ws") || saved.wsUrl || DEFAULTS.wsUrl,
         minDiamonds: num(params.get("min") ?? saved.minDiamonds, DEFAULTS.minDiamonds),
         baseNeed: num(params.get("need") ?? saved.baseNeed, DEFAULTS.baseNeed),
+        pattern: findPattern(params.get("pattern") || saved.pattern)?.id || DEFAULTS.pattern,
         level: num(saved.level, 1),
         energy: num(saved.energy, 0)
       };
@@ -545,6 +633,7 @@
         wsUrl: state.wsUrl,
         minDiamonds: state.minDiamonds,
         baseNeed: state.baseNeed,
+        pattern: state.pattern,
         level: world.level,
         energy: world.energy
       }));
@@ -554,12 +643,25 @@
       els.wsUrl.value = state.wsUrl;
       els.minDiamonds.value = state.minDiamonds;
       els.baseNeed.value = state.baseNeed;
+      els.patternSelect.replaceChildren();
+      PATTERNS.forEach((p) => {
+        const opt = document.createElement("option");
+        opt.value = p.id;
+        opt.textContent = p.name;
+        els.patternSelect.append(opt);
+      });
+      els.patternSelect.value = state.pattern;
     }
 
     function saveSettings() {
       state.wsUrl = els.wsUrl.value.trim() || DEFAULTS.wsUrl;
       state.minDiamonds = Math.max(0, num(els.minDiamonds.value, 0));
       state.baseNeed = Math.max(50, num(els.baseNeed.value, 500));
+      const picked = findPattern(els.patternSelect.value);
+      if (picked) {
+        state.pattern = picked.id;
+        armStreamer(picked.id, false);
+      }
       persist();
       renderHud();
       connect(true);
@@ -597,9 +699,121 @@
     }
 
     function paintTheme() {
+      const p = currentPattern();
+      const sat = p.sat * (0.4 + 0.6 * world.awake);
       document.documentElement.style.setProperty("--hue", String(Math.round(world.hue)));
-      document.documentElement.style.setProperty("--glow", hsl(world.hue, 92, 62));
-      document.documentElement.style.setProperty("--hot", hsl(world.hue + 128, 95, 58));
+      document.documentElement.style.setProperty("--glow", hsl(world.hue, sat, p.lit + 4));
+      document.documentElement.style.setProperty("--hot", hsl(world.hueB ?? p.hues[1] ?? world.hue + 40, sat, p.lit));
+    }
+
+    function currentPattern() {
+      return findPattern(world.patternId) || PATTERNS[0];
+    }
+
+    function findPattern(value) {
+      const key = String(value || "").toLowerCase().trim();
+      if (!key) return null;
+      return PATTERNS.find((p) => p.id === key || p.name.toLowerCase() === key) || null;
+    }
+
+    function lerpHue(a, b, t) {
+      const d = ((b - a + 540) % 360) - 180;
+      return a + d * t;
+    }
+
+    function patHue(t) {
+      const hues = currentPattern().hues;
+      const x = ((t % hues.length) + hues.length) % hues.length;
+      const i = Math.floor(x);
+      const f = x - i;
+      return lerpHue(hues[i], hues[(i + 1) % hues.length], f);
+    }
+
+    function tickPattern() {
+      const p = currentPattern();
+      world.hue = patHue(world.time * (p.speed / 16));
+      world.hueB = patHue(world.time * (p.speed / 16) + 1.4);
+      world.hueC = patHue(world.time * (p.speed / 16) + 2.8);
+      paintTheme();
+    }
+
+    function matchPatternFromText(text) {
+      const raw = String(text || "").toLowerCase().replace(/[^a-z0-9\s]/g, " ");
+      const words = raw.split(/\s+/).filter(Boolean);
+      if (!words.length) return null;
+      let best = null;
+      let bestLen = 0;
+      PATTERNS.forEach((p) => {
+        const names = [p.id, p.name.toLowerCase(), ...(p.aliases || [])];
+        names.forEach((name) => {
+          if (name.length >= bestLen && words.includes(name)) {
+            best = p;
+            bestLen = name.length;
+          }
+        });
+      });
+      return best;
+    }
+
+    function renderChips() {
+      const armed = picks.get("__streamer");
+      els.chips.replaceChildren();
+      PATTERNS.forEach((p) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "chip" + (p.id === world.patternId ? " on" : "") + (p.id === armed && p.id !== world.patternId ? " armed" : "");
+        btn.textContent = p.name;
+        btn.style.background = `linear-gradient(90deg, ${p.hues.map((h) => hsl(h, p.sat, p.lit)).join(", ")})`;
+        btn.onclick = () => {
+          state.pattern = p.id;
+          if (els.patternSelect) els.patternSelect.value = p.id;
+          persist();
+          armStreamer(p.id, true);
+        };
+        els.chips.append(btn);
+      });
+    }
+
+    function setArmedLine(text) {
+      els.armedLine.textContent = text;
+    }
+
+    function armStreamer(id, announce) {
+      const p = findPattern(id);
+      if (!p) return;
+      picks.set("__streamer", p.id);
+      if (announce) setArmedLine(`${p.name} armed — next gift drops it`);
+      renderChips();
+    }
+
+    function armUser(user, pattern) {
+      const uid = (user.uniqueId || user.nickname || "").toLowerCase();
+      if (!uid || !pattern) return;
+      picks.set(uid, pattern.id);
+      const who = user.nickname || user.uniqueId || "viewer";
+      setArmedLine(`${who} armed ${pattern.name} — gift to drop it`);
+    }
+
+    function activatePattern(id, who) {
+      const p = findPattern(id) || currentPattern();
+      world.patternId = p.id;
+      world.awake = 1;
+      world.flash = 1;
+      world.hue = p.hues[0];
+      world.hueB = p.hues[1] ?? p.hues[0];
+      paintTheme();
+      renderChips();
+      const name = who || "the garden";
+      setArmedLine(`${name} dropped ${p.name}`);
+    }
+
+    function resolvePattern(gift) {
+      const uid = String(gift.uniqueId || "").toLowerCase();
+      if (uid && picks.has(uid)) return picks.get(uid);
+      const fromGift = matchPatternFromText(gift.giftName);
+      if (fromGift) return fromGift.id;
+      if (picks.has("__streamer")) return picks.get("__streamer");
+      return state.pattern || world.patternId;
     }
 
     function renderHud() {
@@ -654,8 +868,9 @@
         let raw;
         try { raw = JSON.parse(ev.data); } catch { return; }
         const msg = unwrap(raw);
-        if (normEvent(msg.event) !== "gift") return;
-        handleGift(msg.data || {});
+        const evName = normEvent(msg.event);
+        if (isChatEvent(evName)) handleChat(msg.data || {});
+        else if (evName === "gift") handleGift(msg.data || {});
       };
     }
 
@@ -677,10 +892,32 @@
       return String(name || "").toLowerCase().replace(/[^a-z]/g, "");
     }
 
+    function isChatEvent(name) {
+      return name === "chat" || name === "comment" || name === "webcastchatmessage" || name === "text" || name === "message";
+    }
+
+    function handleChat(raw) {
+      const user = normalizeChat(raw);
+      if (!user.uniqueId && !user.nickname) return;
+      const pattern = matchPatternFromText(user.comment);
+      if (!pattern) return;
+      armUser(user, pattern);
+    }
+
+    function normalizeChat(d) {
+      const user = d.user || {};
+      return {
+        uniqueId: d.uniqueId || user.uniqueId || d.userName || "",
+        nickname: d.nickname || user.nickname || d.uniqueId || user.uniqueId || "Viewer",
+        comment: d.comment || d.text || d.message || d.content || ""
+      };
+    }
+
     function handleGift(raw) {
       const gift = normalizeGift(raw);
       if (!gift.uniqueId && !gift.nickname) return;
       if (gift.giftType === 1 && !gift.repeatEnd) {
+        if (gift.repeatCount <= 1) activatePattern(resolvePattern(gift), gift.nickname || gift.uniqueId);
         dye(gift, true);
         world.spin = Math.min(2.4, world.spin + 0.08);
         showCombo(gift);
@@ -694,10 +931,14 @@
 
     function dye(gift, combo) {
       const diamonds = gift.totalDiamonds || gift.diamonds || 1;
-      world.hue = (world.hue + (combo ? 16 : 137.5 + Math.min(70, diamonds * 0.3))) % 360;
+      if (!combo) activatePattern(resolvePattern(gift), gift.nickname || gift.uniqueId);
+      else {
+        world.awake = Math.min(1, world.awake + 0.12);
+        world.flash = 0.5;
+      }
       world.trip = Math.min(1, world.trip + (combo ? 0.05 : 0.16 + Math.min(0.3, diamonds / 450)));
       world.warp = Math.min(1.8, world.warp + (combo ? 0.1 : 0.32));
-      world.flash = combo ? 0.5 : 1;
+      if (!combo) world.flash = 1;
       paintTheme();
     }
 
@@ -740,7 +981,7 @@
       blooming = true;
       world.flash = 1;
       world.trip = 1;
-      world.hue = (world.hue + 80) % 360;
+      world.awake = 1;
       els.bloomedSub.textContent = `${gift.name} opened layer ${String(world.level + 1).padStart(2, "0")}`;
       els.bloomed.classList.add("show");
       burst(90, world.hue, 70);
@@ -863,7 +1104,9 @@
       world.warp *= Math.pow(0.96, dt * 60);
       world.flash *= Math.pow(0.9, dt * 60);
       world.trip = Math.max(0.18, world.trip - dt * 0.03);
+      world.awake = Math.max(0.28, world.awake - dt * 0.04);
       world.spin += (0.22 + world.trip * 0.5 - world.spin) * Math.min(1, 0.4 * dt);
+      tickPattern();
 
       if (overlay) ctx.clearRect(0, 0, w, h);
       else {
@@ -885,6 +1128,8 @@
     }
 
     function drawNebula() {
+      const p = currentPattern();
+      const sat = p.sat * (0.45 + 0.55 * world.awake);
       ctx.save();
       ctx.globalCompositeOperation = "lighter";
       for (let i = 0; i < 4; i++) {
@@ -892,7 +1137,7 @@
         const cy = h * 0.52 + Math.cos(world.time * 0.2 + i) * h * 0.08;
         const rad = (180 + i * 70) * (1 + world.trip * 0.35);
         const g = ctx.createRadialGradient(cx, cy, 8, cx, cy, rad);
-        g.addColorStop(0, hsl(world.hue + i * 48, 100, 62, 0.16 + world.flash * 0.12));
+        g.addColorStop(0, hsl(patHue(world.time * (p.speed / 18) + i), sat, p.lit, 0.16 + world.flash * 0.12));
         g.addColorStop(1, "transparent");
         ctx.fillStyle = g;
         ctx.beginPath();
@@ -910,7 +1155,7 @@
         m.a += m.s * dt * (0.4 + world.spin);
         const x = cx + Math.cos(m.a + world.time * 0.1) * m.r * (0.7 + 0.3 * Math.sin(world.time + m.h));
         const y = cy + Math.sin(m.a + world.time * 0.1) * m.r * 0.62;
-        ctx.fillStyle = hsl(world.hue + m.h * 0.2, 90, 70, 0.35);
+        ctx.fillStyle = hsl(patHue(m.h / 90), currentPattern().sat * (0.5 + 0.5 * world.awake), 70, 0.35);
         ctx.beginPath();
         ctx.arc(x, y, m.sz, 0, Math.PI * 2);
         ctx.fill();
@@ -941,6 +1186,8 @@
     }
 
     function drawWedge(pulse) {
+      const p = currentPattern();
+      const sat = p.sat * (0.5 + 0.5 * world.awake);
       const len = Math.min(w, h) * (0.28 + world.trip * 0.1) * pulse;
       ctx.lineCap = "round";
       ctx.lineJoin = "round";
@@ -956,12 +1203,12 @@
           if (i === 0) ctx.moveTo(x, y);
           else ctx.lineTo(x, y);
         }
-        ctx.strokeStyle = hsl(world.hue + arm * 40 + world.time * 12, 95, 62, 0.55);
+        ctx.strokeStyle = hsl(patHue(world.time * (p.speed / 14) + arm), sat, p.lit, 0.55);
         ctx.lineWidth = 2.2 + world.trip * 3.5 + arm;
         ctx.stroke();
       }
 
-      ctx.fillStyle = hsl(world.hue + 70, 100, 64, 0.12 + world.trip * 0.1);
+      ctx.fillStyle = hsl(world.hueB, sat, p.lit, 0.12 + world.trip * 0.1);
       ctx.beginPath();
       ctx.moveTo(0, 0);
       ctx.quadraticCurveTo(len * 0.35, len * 0.12, len * 0.72, 8);
@@ -970,25 +1217,27 @@
     }
 
     function drawCore(pulse) {
+      const p = currentPattern();
+      const sat = p.sat * (0.55 + 0.45 * world.awake);
       const r = (34 + world.trip * 22 + world.flash * 16) * pulse;
       const g = ctx.createRadialGradient(world.lookX * 8, world.lookY * 8, 4, 0, 0, r * 1.6);
       g.addColorStop(0, "#fff");
-      g.addColorStop(0.14, hsl(world.hue + 40, 100, 78));
-      g.addColorStop(0.38, hsl(world.hue, 95, 52));
-      g.addColorStop(0.7, hsl(world.hue + 200, 80, 18, 0.85));
+      g.addColorStop(0.14, hsl(world.hueB, sat, Math.min(86, p.lit + 20)));
+      g.addColorStop(0.38, hsl(world.hue, sat, p.lit));
+      g.addColorStop(0.7, hsl(world.hueC, Math.max(40, sat - 15), 18, 0.85));
       g.addColorStop(1, "transparent");
       ctx.fillStyle = g;
       ctx.beginPath();
       ctx.arc(0, 0, r * 1.55, 0, Math.PI * 2);
       ctx.fill();
 
-      ctx.strokeStyle = hsl(world.hue + 90, 100, 70, 0.7);
+      ctx.strokeStyle = hsl(world.hueB, sat, Math.min(80, p.lit + 12), 0.7);
       ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.arc(0, 0, r * 0.92, 0, Math.PI * 2);
       ctx.stroke();
 
-      ctx.fillStyle = hsl(world.hue + 220, 50, 8, 0.9);
+      ctx.fillStyle = hsl(world.hueC, 50, 8, 0.9);
       ctx.beginPath();
       ctx.arc(world.lookX * 6, world.lookY * 6, r * 0.28, 0, Math.PI * 2);
       ctx.fill();
@@ -1067,8 +1316,8 @@
       ctx.save();
       ctx.globalCompositeOperation = "lighter";
       const g = ctx.createRadialGradient(w * 0.5, h * 0.52, 10, w * 0.5, h * 0.52, Math.max(w, h) * 0.7);
-      g.addColorStop(0, hsl(world.hue, 100, 72, world.flash * 0.32));
-      g.addColorStop(0.45, hsl(world.hue + 70, 100, 55, world.flash * 0.1));
+      g.addColorStop(0, hsl(world.hue, currentPattern().sat, 72, world.flash * 0.32));
+      g.addColorStop(0.45, hsl(world.hueB, currentPattern().sat, 55, world.flash * 0.1));
       g.addColorStop(1, "transparent");
       ctx.fillStyle = g;
       ctx.fillRect(0, 0, w, h);
@@ -1088,6 +1337,7 @@
       const user = names[Math.floor(Math.random() * names.length)];
       const gift = gifts[Math.floor(Math.random() * gifts.length)];
       const nick = user[0].toUpperCase() + user.slice(1);
+      picks.set(user, picks.get("__streamer") || state.pattern || world.patternId);
       if (!combo || gift.giftType !== 1) {
         handleGift({
           uniqueId: user, nickname: nick, giftName: gift.giftName, giftType: gift.giftType,
@@ -1114,6 +1364,21 @@
       if (e.key === "c" || e.key === "C") demoGift(true);
       if (e.key === "r" || e.key === "R") resetGarden();
       if (e.key === "s" || e.key === "S") document.body.classList.toggle("show-settings");
+      if (e.key >= "1" && e.key <= "9") {
+        const p = PATTERNS[Number(e.key) - 1];
+        if (p) {
+          state.pattern = p.id;
+          if (els.patternSelect) els.patternSelect.value = p.id;
+          persist();
+          armStreamer(p.id, true);
+        }
+      }
+      if (e.key === "0" && PATTERNS[9]) {
+        state.pattern = PATTERNS[9].id;
+        if (els.patternSelect) els.patternSelect.value = PATTERNS[9].id;
+        persist();
+        armStreamer(PATTERNS[9].id, true);
+      }
     }
   </script>
 </body>
