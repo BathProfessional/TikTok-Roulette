@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TikTok Roulette</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: transparent;
+      --ink: #f7f8ff;
+      --muted: rgba(247, 248, 255, 0.62);
+      --panel: rgba(7, 8, 16, 0.78);
+      --panel-strong: rgba(7, 8, 16, 0.92);
+      --stroke: rgba(255, 255, 255, 0.12);
+      --gold: #ffd76a;
+      --cyan: #3dffef;
+      --pink: #ff2e63;
+      --green: #3dff8a;
+      --red: #ff4d6d;
+      --shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
+      --wheel: 540px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: Outfit, "Segoe UI", sans-serif;
+      user-select: none;
+    }
+
+    body.preview {
+      background:
+        radial-gradient(1200px 700px at 50% 20%, rgba(255, 46, 99, 0.18), transparent 55%),
+        radial-gradient(900px 600px at 80% 90%, rgba(61, 255, 239, 0.12), transparent 50%),
+        #07080f;
+    }
+
+    .hud {
+      position: absolute;
+      inset: 28px 36px auto 36px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 18px;
+      align-items: stretch;
+      z-index: 5;
+      pointer-events: none;
+    }
+
+    .goal, .status, .card, .settings, .combo {
+      background: var(--panel);
+      border: 1px solid var(--stroke);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(16px);
+    }
+
+    .goal {
+      border-radius: 18px;
+      padding: 14px 18px 16px;
+      min-width: 0;
+    }
+
+    .goal-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .kicker {
+      font-size: 12px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .goal-count {
+      font-weight: 800;
+      font-size: 18px;
+      color: var(--gold);
+      white-space: nowrap;
+    }
+
+    .track {
+      height: 14px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .fill {
+      height: 100%;
+      width: 0%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--pink), var(--gold) 55%, var(--cyan));
+      box-shadow: 0 0 18px rgba(255, 215, 106, 0.45);
+      transition: width 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .fill.complete {
+      animation: glowPulse 1.4s ease-in-out infinite;
+    }
+
+    .status {
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-radius: 999px;
+      padding: 0 18px;
+      min-width: 210px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-size: 13px;
+    }
+
+    .dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--red);
+      box-shadow: 0 0 12px var(--red);
+      transition: background 0.25s, box-shadow 0.25s;
+    }
+
+    .status.on .dot {
+      background: var(--green);
+      box-shadow: 0 0 14px var(--green);
+    }
+
+    .stage {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      padding-top: 36px;
+    }
+
+    .wheel-wrap {
+      position: relative;
+      width: var(--wheel);
+      height: var(--wheel);
+      filter: drop-shadow(0 30px 40px rgba(0, 0, 0, 0.55));
+    }
+
+    .glow {
+      position: absolute;
+      inset: -70px;
+      background:
+        radial-gradient(circle at center, rgba(255, 46, 99, 0.22), transparent 42%),
+        radial-gradient(circle at center, rgba(61, 255, 239, 0.16), transparent 58%);
+      animation: aura 4.5s ease-in-out infinite;
+      pointer-events: none;
+    }
+
+    .pointer {
+      position: absolute;
+      top: -8px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 4;
+      width: 0;
+      height: 0;
+      border-left: 18px solid transparent;
+      border-right: 18px solid transparent;
+      border-top: 36px solid var(--gold);
+      filter: drop-shadow(0 6px 8px rgba(0, 0, 0, 0.55));
+    }
+
+    .pointer::after {
+      content: "";
+      position: absolute;
+      top: -36px;
+      left: -7px;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #fff7d6;
+      box-shadow: 0 0 16px var(--gold);
+    }
+
+    .wheel-rotator {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      will-change: transform;
+    }
+
+    canvas {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      display: block;
+    }
+
+    .hub {
+      position: absolute;
+      inset: 38%;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at 35% 30%, #fff, #ffe08a 28%, #c47a12 70%, #6a3a00);
+      border: 6px solid #1a1208;
+      box-shadow:
+        inset 0 8px 16px rgba(255, 255, 255, 0.35),
+        0 10px 24px rgba(0, 0, 0, 0.45);
+      display: grid;
+      place-items: center;
+      z-index: 3;
+      color: #2a1600;
+      font-family: "Bebas Neue", sans-serif;
+      font-size: 28px;
+      letter-spacing: 0.08em;
+      text-align: center;
+      line-height: 0.85;
+    }
+
+    .ring {
+      position: absolute;
+      inset: -10px;
+      border-radius: 50%;
+      border: 10px solid #120d18;
+      box-shadow:
+        0 0 0 6px rgba(255, 215, 106, 0.28),
+        inset 0 0 0 3px rgba(255, 255, 255, 0.08);
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .card {
+      position: absolute;
+      left: 50%;
+      bottom: 42px;
+      transform: translateX(-50%) translateY(16px);
+      width: min(720px, calc(100% - 72px));
+      border-radius: 22px;
+      padding: 18px 22px;
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 6;
+      transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .card.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .avatar {
+      width: 72px;
+      height: 72px;
+      border-radius: 18px;
+      object-fit: cover;
+      background: #15151f;
+      border: 1px solid var(--stroke);
+      flex: 0 0 auto;
+    }
+
+    .who {
+      font-size: 13px;
+      color: var(--muted);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+
+    .name {
+      font-family: "Bebas Neue", sans-serif;
+      font-size: 38px;
+      letter-spacing: 0.03em;
+      line-height: 0.95;
+    }
+
+    .meta {
+      margin-top: 4px;
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .gift {
+      color: var(--cyan);
+    }
+
+    .diamonds {
+      color: var(--gold);
+    }
+
+    .prize-chip {
+      margin-left: auto;
+      text-align: right;
+      flex: 0 0 auto;
+    }
+
+    .prize-chip b {
+      display: block;
+      font-family: "Bebas Neue", sans-serif;
+      font-size: 34px;
+      color: var(--pink);
+      letter-spacing: 0.04em;
+    }
+
+    .combo {
+      position: absolute;
+      top: 118px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-8px);
+      border-radius: 999px;
+      padding: 10px 18px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      opacity: 0;
+      z-index: 6;
+      font-weight: 700;
+      transition: opacity 0.25s ease, transform 0.25s ease;
+    }
+
+    .combo.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .combo em {
+      font-style: normal;
+      color: var(--gold);
+      font-family: "Bebas Neue", sans-serif;
+      font-size: 28px;
+      letter-spacing: 0.04em;
+    }
+
+    .settings-wrap {
+      position: absolute;
+      right: 24px;
+      bottom: 24px;
+      z-index: 8;
+      pointer-events: auto;
+    }
+
+    .gear {
+      width: 44px;
+      height: 44px;
+      margin-left: auto;
+      border-radius: 14px;
+      border: 1px solid var(--stroke);
+      background: var(--panel);
+      color: var(--ink);
+      display: grid;
+      place-items: center;
+      font-size: 20px;
+      box-shadow: var(--shadow);
+    }
+
+    .settings {
+      width: 320px;
+      border-radius: 20px;
+      padding: 16px;
+      margin-top: 10px;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(12px);
+      transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+
+    body.show-settings .settings,
+    .settings-wrap:hover .settings,
+    .settings-wrap:focus-within .settings {
+      opacity: 1;
+      pointer-events: auto;
+      transform: none;
+    }
+
+    .settings h2 {
+      font-size: 13px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+      color: var(--muted);
+    }
+
+    label {
+      display: block;
+      font-size: 12px;
+      color: var(--muted);
+      margin: 8px 0 4px;
+    }
+
+    input, textarea {
+      width: 100%;
+      border: 1px solid var(--stroke);
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--ink);
+      border-radius: 10px;
+      padding: 8px 10px;
+      font: inherit;
+      outline: none;
+    }
+
+    textarea { min-height: 64px; resize: vertical; }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .btns {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 10px;
+      padding: 10px 12px;
+      font: 700 13px Outfit, sans-serif;
+      cursor: pointer;
+      color: #081016;
+      background: var(--gold);
+    }
+
+    button.ghost {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--ink);
+    }
+
+    button.gear {
+      background: var(--panel);
+      color: var(--ink);
+      padding: 0;
+    }
+
+    .hint {
+      margin-top: 8px;
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+
+    .fx {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 7;
+    }
+
+    .spark {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      animation: spark 0.9s ease-out forwards;
+    }
+
+    @keyframes aura {
+      0%, 100% { opacity: 0.55; transform: scale(0.96); }
+      50% { opacity: 1; transform: scale(1.04); }
+    }
+
+    @keyframes glowPulse {
+      0%, 100% { filter: brightness(1); }
+      50% { filter: brightness(1.35); }
+    }
+
+    @keyframes spark {
+      to { transform: translate(var(--tx), var(--ty)) scale(0.2); opacity: 0; }
+    }
+
+    @media (max-width: 1100px) {
+      :root { --wheel: 420px; }
+      .name { font-size: 30px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="hud">
+    <section class="goal" aria-label="Diamond goal">
+      <div class="goal-top">
+        <div class="kicker">Diamond goal</div>
+        <div class="goal-count" id="goalCount">0 / 10,000 💎</div>
+      </div>
+      <div class="track"><div class="fill" id="goalFill"></div></div>
+    </section>
+    <div class="status" id="status">
+      <span class="dot"></span>
+      <span id="statusText">Offline</span>
+    </div>
+  </header>
+
+  <div class="combo" id="combo">
+    <span id="comboText">Combo</span>
+    <em id="comboCount">x1</em>
+  </div>
+
+  <main class="stage">
+    <div class="wheel-wrap">
+      <div class="glow"></div>
+      <div class="pointer"></div>
+      <div class="ring"></div>
+      <div class="wheel-rotator" id="rotator">
+        <canvas id="wheel" width="800" height="800"></canvas>
+      </div>
+      <div class="hub">SPIN<br />LIVE</div>
+    </div>
+  </main>
+
+  <aside class="card" id="card">
+    <img class="avatar" id="avatar" alt="" />
+    <div>
+      <div class="who" id="who">@user</div>
+      <div class="name" id="displayName">Waiting for gifts</div>
+      <div class="meta">
+        <span class="gift" id="giftLine">Gift</span>
+        <span> · </span>
+        <span class="diamonds" id="diamondLine">0 💎</span>
+      </div>
+    </div>
+    <div class="prize-chip">
+      <span class="kicker">Landed on</span>
+      <b id="prize">—</b>
+    </div>
+  </aside>
+
+  <div class="fx" id="fx"></div>
+
+  <div class="settings-wrap" id="settings">
+    <button class="gear" type="button" title="Settings">⚙</button>
+    <section class="settings">
+    <h2>Overlay settings</h2>
+    <label>WebSocket</label>
+    <input id="wsUrl" value="ws://localhost:21213/" />
+    <div class="row">
+      <div>
+        <label>Min diamonds to spin</label>
+        <input id="minDiamonds" type="number" min="0" value="0" />
+      </div>
+      <div>
+        <label>Goal diamonds</label>
+        <input id="goalDiamonds" type="number" min="1" value="10000" />
+      </div>
+    </div>
+    <label>Wheel labels (comma separated)</label>
+    <textarea id="prizes">JACKPOT, SHOUTOUT, BONUS, WILD, VIP, LUCKY, MYSTERY, DOUBLE</textarea>
+    <div class="btns">
+      <button type="button" id="saveBtn">Save</button>
+      <button type="button" class="ghost" id="resetGoalBtn">Reset goal</button>
+      <button type="button" id="demoBtn">Demo gift</button>
+      <button type="button" class="ghost" id="comboBtn">Demo combo</button>
+    </div>
+    <p class="hint">Hover the gear to edit. D = demo gift, C = combo, R = reset goal. Add ?clean=1 in OBS to hide this panel. Add ?preview=1 for a dark test background.</p>
+    </section>
+  </div>
+
+  <script>
+    const DEFAULTS = {
+      wsUrl: "ws://localhost:21213/",
+      minDiamonds: 0,
+      goalDiamonds: 10000,
+      prizes: ["JACKPOT", "SHOUTOUT", "BONUS", "WILD", "VIP", "LUCKY", "MYSTERY", "DOUBLE"],
+      totalDiamonds: 0
+    };
+
+    const COLORS = [
+      "#ff2e63", "#3dffef", "#ffd76a", "#b57bff",
+      "#3dff8a", "#ff9f1c", "#4da3ff", "#ff5d8f"
+    ];
+
+    const params = new URLSearchParams(location.search);
+    const state = loadState();
+    const queue = [];
+    let spinning = false;
+    let rotation = 0;
+    let ws = null;
+    let reconnectTimer = 0;
+    let comboHideTimer = 0;
+    let cardHideTimer = 0;
+
+    const els = {
+      body: document.body,
+      status: document.getElementById("status"),
+      statusText: document.getElementById("statusText"),
+      goalCount: document.getElementById("goalCount"),
+      goalFill: document.getElementById("goalFill"),
+      rotator: document.getElementById("rotator"),
+      canvas: document.getElementById("wheel"),
+      card: document.getElementById("card"),
+      avatar: document.getElementById("avatar"),
+      who: document.getElementById("who"),
+      displayName: document.getElementById("displayName"),
+      giftLine: document.getElementById("giftLine"),
+      diamondLine: document.getElementById("diamondLine"),
+      prize: document.getElementById("prize"),
+      combo: document.getElementById("combo"),
+      comboText: document.getElementById("comboText"),
+      comboCount: document.getElementById("comboCount"),
+      fx: document.getElementById("fx"),
+      settings: document.getElementById("settings"),
+      wsUrl: document.getElementById("wsUrl"),
+      minDiamonds: document.getElementById("minDiamonds"),
+      goalDiamonds: document.getElementById("goalDiamonds"),
+      prizes: document.getElementById("prizes")
+    };
+
+    if (params.has("preview")) document.body.classList.add("preview");
+    if (params.has("clean")) els.settings.style.display = "none";
+    if (params.has("demo")) setTimeout(() => demoGift(false), 800);
+
+    fillForm();
+    drawWheel();
+    renderGoal();
+    connect();
+
+    document.getElementById("saveBtn").onclick = saveSettings;
+    document.getElementById("resetGoalBtn").onclick = resetGoal;
+    document.getElementById("demoBtn").onclick = () => demoGift(false);
+    document.getElementById("comboBtn").onclick = () => demoGift(true);
+    window.addEventListener("keydown", onKey);
+    window.addEventListener("resize", drawWheel);
+
+    function loadState() {
+      let saved = {};
+      try { saved = JSON.parse(localStorage.getItem("tiktok-roulette") || "{}"); } catch {}
+      const prizes = (params.get("prizes") || saved.prizes || DEFAULTS.prizes.join(","))
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+      return {
+        wsUrl: params.get("ws") || saved.wsUrl || DEFAULTS.wsUrl,
+        minDiamonds: num(params.get("min") ?? saved.minDiamonds, DEFAULTS.minDiamonds),
+        goalDiamonds: num(params.get("goal") ?? saved.goalDiamonds, DEFAULTS.goalDiamonds),
+        prizes: prizes.length ? prizes : DEFAULTS.prizes.slice(),
+        totalDiamonds: num(saved.totalDiamonds, 0)
+      };
+    }
+
+    function persist() {
+      localStorage.setItem("tiktok-roulette", JSON.stringify(state));
+    }
+
+    function fillForm() {
+      els.wsUrl.value = state.wsUrl;
+      els.minDiamonds.value = state.minDiamonds;
+      els.goalDiamonds.value = state.goalDiamonds;
+      els.prizes.value = state.prizes.join(", ");
+    }
+
+    function saveSettings() {
+      state.wsUrl = els.wsUrl.value.trim() || DEFAULTS.wsUrl;
+      state.minDiamonds = Math.max(0, num(els.minDiamonds.value, 0));
+      state.goalDiamonds = Math.max(1, num(els.goalDiamonds.value, 10000));
+      state.prizes = els.prizes.value.split(",").map((s) => s.trim()).filter(Boolean);
+      persist();
+      drawWheel();
+      renderGoal();
+      connect(true);
+    }
+
+    function resetGoal() {
+      state.totalDiamonds = 0;
+      persist();
+      renderGoal();
+    }
+
+    function renderGoal() {
+      const goal = state.goalDiamonds;
+      const total = state.totalDiamonds;
+      const pct = Math.max(0, Math.min(100, (total / goal) * 100));
+      els.goalCount.textContent = `${fmt(total)} / ${fmt(goal)} 💎`;
+      els.goalFill.style.width = pct + "%";
+      els.goalFill.classList.toggle("complete", total >= goal);
+    }
+
+    function setConnected(on) {
+      els.status.classList.toggle("on", on);
+      els.statusText.textContent = on ? "Connected" : "Offline";
+    }
+
+    function connect(force) {
+      if (ws && (force || ws.readyState > 1)) {
+        try { ws.close(); } catch {}
+        ws = null;
+      }
+      if (ws && (ws.readyState === 0 || ws.readyState === 1)) return;
+      setConnected(false);
+      try {
+        ws = new WebSocket(state.wsUrl);
+      } catch {
+        scheduleReconnect();
+        return;
+      }
+      ws.onopen = () => {
+        setConnected(true);
+        clearTimeout(reconnectTimer);
+      };
+      ws.onclose = () => {
+        setConnected(false);
+        scheduleReconnect();
+      };
+      ws.onerror = () => setConnected(false);
+      ws.onmessage = (ev) => {
+        let raw;
+        try { raw = JSON.parse(ev.data); } catch { return; }
+        const msg = unwrap(raw);
+        if (normEvent(msg.event) !== "gift") return;
+        handleGift(msg.data || {});
+      };
+    }
+
+    function scheduleReconnect() {
+      clearTimeout(reconnectTimer);
+      reconnectTimer = setTimeout(() => connect(), 2000);
+    }
+
+    function unwrap(raw) {
+      if (!raw || typeof raw !== "object") return { event: "", data: {} };
+      if (raw.data && (raw.event || raw.type || raw.eventName)) {
+        return { event: raw.event || raw.type || raw.eventName, data: raw.data };
+      }
+      if (raw.data && raw.data.event) return unwrap(raw.data);
+      return { event: raw.event || raw.type || "", data: raw };
+    }
+
+    function normEvent(name) {
+      return String(name || "").toLowerCase().replace(/[^a-z]/g, "");
+    }
+
+    function handleGift(raw) {
+      const gift = normalizeGift(raw);
+      if (!gift.uniqueId && !gift.nickname) return;
+
+      const comboInProgress = gift.giftType === 1 && !gift.repeatEnd;
+      if (comboInProgress) {
+        showCombo(gift);
+        return;
+      }
+
+      hideComboSoon();
+      addDiamonds(gift.totalDiamonds);
+      if (gift.totalDiamonds < state.minDiamonds) return;
+
+      addDiamonds(gift.totalDiamonds);
+      queue.push(gift);
+      processQueue();
+    }
+
+    function addDiamonds(amount) {
+      state.totalDiamonds += Math.max(0, amount);
+      persist();
+      renderGoal();
+    }
+
+    function processQueue() {
+      if (spinning || !queue.length) return;
+      const gift = queue.shift();
+      spinFor(gift);
+    }
+
+    function normalizeGift(d) {
+      const user = d.user || {};
+      const giftObj = d.gift || d.giftDetails || {};
+      const uniqueId = d.uniqueId || user.uniqueId || d.userName || "";
+      const nickname = d.nickname || user.nickname || uniqueId || "Viewer";
+      const giftName = d.giftName || giftObj.giftName || giftObj.name || giftObj.gift_name || "Gift";
+      const giftType = num(first(d.giftType, giftObj.gift_type, giftObj.giftType), 0);
+      const diamondCount = num(first(
+        d.diamondCount, d.diamond_count, giftObj.diamondCount, giftObj.diamond_count
+      ), 0);
+      const repeatCount = Math.max(1, num(first(
+        d.repeatCount, d.repeat_count, giftObj.repeat_count, giftObj.repeatCount
+      ), 1));
+      const repeatEnd = isTrue(first(d.repeatEnd, d.repeat_end, giftObj.repeat_end, giftObj.repeatEnd));
+      return {
+        uniqueId,
+        nickname,
+        giftName,
+        giftType,
+        diamondCount,
+        repeatCount,
+        repeatEnd,
+        totalDiamonds: diamondCount * repeatCount,
+        profilePictureUrl: d.profilePictureUrl || user.profilePictureUrl || "",
+        giftPictureUrl: d.giftPictureUrl || ""
+      };
+    }
+
+    function first(...vals) {
+      return vals.find((v) => v !== undefined && v !== null);
+    }
+
+    function isTrue(v) {
+      return v === true || v === 1 || v === "1" || v === "true";
+    }
+
+    function num(v, fallback) {
+      const n = Number(v);
+      return Number.isFinite(n) ? n : fallback;
+    }
+
+    function fmt(n) {
+      return Number(n || 0).toLocaleString("en-US");
+    }
+
+    function drawWheel() {
+      const canvas = els.canvas;
+      const ctx = canvas.getContext("2d");
+      const size = 800;
+      canvas.width = size;
+      canvas.height = size;
+      const cx = size / 2;
+      const cy = size / 2;
+      const r = size / 2 - 8;
+      const prizes = state.prizes;
+      const slice = (Math.PI * 2) / prizes.length;
+      ctx.clearRect(0, 0, size, size);
+
+      prizes.forEach((label, i) => {
+        const start = i * slice - Math.PI / 2;
+        const end = start + slice;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.arc(cx, cy, r, start, end);
+        ctx.closePath();
+        ctx.fillStyle = COLORS[i % COLORS.length];
+        ctx.fill();
+        ctx.strokeStyle = "rgba(8,8,16,0.65)";
+        ctx.lineWidth = 4;
+        ctx.stroke();
+
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(start + slice / 2);
+        ctx.textAlign = "right";
+        ctx.fillStyle = "#0b0c12";
+        ctx.font = "bold 28px Outfit, sans-serif";
+        ctx.shadowColor = "rgba(255,255,255,0.35)";
+        ctx.shadowBlur = 8;
+        ctx.fillText(label, r - 28, 10);
+        ctx.restore();
+      });
+
+      ctx.beginPath();
+      ctx.arc(cx, cy, r - 2, 0, Math.PI * 2);
+      ctx.strokeStyle = "rgba(255,215,106,0.35)";
+      ctx.lineWidth = 10;
+      ctx.stroke();
+    }
+
+    function spinFor(gift) {
+      spinning = true;
+      const count = state.prizes.length;
+      const index = Math.floor(Math.random() * count);
+      const slice = 360 / count;
+      const extra = 5 + Math.floor(Math.random() * 3);
+      const current = ((rotation % 360) + 360) % 360;
+      const targetMod = (360 - (index * slice + slice / 2) + 360) % 360;
+      let delta = targetMod - current;
+      if (delta <= 0) delta += 360;
+      rotation += extra * 360 + delta;
+
+      els.rotator.style.transition = "none";
+      void els.rotator.offsetWidth;
+      els.rotator.style.transition = "transform 5.2s cubic-bezier(0.12, 0.72, 0.08, 1)";
+      els.rotator.style.transform = `rotate(${rotation}deg)`;
+
+      showCard(gift, "SPINNING");
+      window.setTimeout(() => {
+        const prize = state.prizes[index];
+        showCard(gift, prize);
+        burst();
+        spinning = false;
+        processQueue();
+      }, 5300);
+    }
+
+    function showCard(gift, prize) {
+      els.who.textContent = gift.uniqueId ? `@${gift.uniqueId}` : "gifter";
+      els.displayName.textContent = gift.nickname || gift.uniqueId || "Viewer";
+      els.giftLine.textContent = gift.repeatCount > 1
+        ? `${gift.giftName} ×${gift.repeatCount}`
+        : gift.giftName;
+      els.diamondLine.textContent = `${fmt(gift.totalDiamonds)} 💎`;
+      els.prize.textContent = prize;
+      if (gift.profilePictureUrl) {
+        els.avatar.src = gift.profilePictureUrl;
+        els.avatar.style.display = "block";
+      } else {
+        els.avatar.removeAttribute("src");
+        els.avatar.style.display = "none";
+      }
+      els.card.classList.add("show");
+      clearTimeout(cardHideTimer);
+      cardHideTimer = setTimeout(() => els.card.classList.remove("show"), 8200);
+    }
+
+    function showCombo(gift) {
+      els.comboText.textContent = `${gift.nickname || gift.uniqueId} · ${gift.giftName}`;
+      els.comboCount.textContent = `x${gift.repeatCount}`;
+      els.combo.classList.add("show");
+      clearTimeout(comboHideTimer);
+    }
+
+    function hideComboSoon() {
+      clearTimeout(comboHideTimer);
+      comboHideTimer = setTimeout(() => els.combo.classList.remove("show"), 600);
+    }
+
+    function burst() {
+      const box = els.fx.getBoundingClientRect();
+      for (let i = 0; i < 28; i++) {
+        const spark = document.createElement("span");
+        spark.className = "spark";
+        const x = box.width / 2;
+        const y = box.height / 2 - 40;
+        const angle = (Math.PI * 2 * i) / 28;
+        const dist = 90 + Math.random() * 220;
+        spark.style.left = x + "px";
+        spark.style.top = y + "px";
+        spark.style.background = COLORS[i % COLORS.length];
+        spark.style.setProperty("--tx", Math.cos(angle) * dist + "px");
+        spark.style.setProperty("--ty", Math.sin(angle) * dist + "px");
+        els.fx.appendChild(spark);
+        setTimeout(() => spark.remove(), 900);
+      }
+    }
+
+    function demoGift(combo) {
+      const names = ["luna", "kai", "nova", "rex", "mira"];
+      const gifts = [
+        { giftName: "Rose", diamondCount: 1, giftType: 1 },
+        { giftName: "TikTok", diamondCount: 1, giftType: 1 },
+        { giftName: "Ice Cream Cone", diamondCount: 1, giftType: 1 },
+        { giftName: "Lion", diamondCount: 299, giftType: 0 },
+        { giftName: "Galaxy", diamondCount: 1000, giftType: 0 }
+      ];
+      const user = names[Math.floor(Math.random() * names.length)];
+      const gift = gifts[Math.floor(Math.random() * gifts.length)];
+      if (!combo || gift.giftType !== 1) {
+        handleGift({
+          uniqueId: user,
+          nickname: user[0].toUpperCase() + user.slice(1),
+          giftName: gift.giftName,
+          giftType: gift.giftType,
+          diamondCount: gift.diamondCount,
+          repeatCount: gift.giftType === 1 ? 1 + Math.floor(Math.random() * 12) : 1,
+          repeatEnd: true
+        });
+        return;
+      }
+      let n = 1;
+      const id = setInterval(() => {
+        handleGift({
+          uniqueId: user,
+          nickname: user[0].toUpperCase() + user.slice(1),
+          giftName: gift.giftName,
+          giftType: 1,
+          diamondCount: gift.diamondCount,
+          repeatCount: n,
+          repeatEnd: n >= 8
+        });
+        n += 1;
+        if (n > 8) clearInterval(id);
+      }, 180);
+    }
+
+    function onKey(e) {
+      if (e.target && /input|textarea/i.test(e.target.tagName)) return;
+      if (e.key === "d" || e.key === "D") demoGift(false);
+      if (e.key === "c" || e.key === "C") demoGift(true);
+      if (e.key === "r" || e.key === "R") resetGoal();
+      if (e.key === "s" || e.key === "S") document.body.classList.toggle("show-settings");
+    }
+
+    els.avatar.addEventListener("error", () => {
+      els.avatar.style.display = "none";
+    });
+  </script>
+</body>
+</html>
