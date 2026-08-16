@@ -44,7 +44,7 @@
       inset: 0;
       pointer-events: none;
       z-index: 6;
-      background: radial-gradient(circle at 50% 52%, transparent 42%, rgba(0, 0, 0, 0.42) 100%);
+      background: radial-gradient(circle at 50% 52%, transparent 50%, rgba(0, 0, 0, 0.22) 100%);
     }
 
     .hud, .side, .banner, .combo, .bloomed, .settings, .last {
@@ -74,7 +74,7 @@
       font-size: 22px;
       letter-spacing: 0.18em;
       color: var(--glow);
-      text-shadow: 0 0 18px var(--glow), 0 0 40px var(--hot);
+      text-shadow: 0 0 18px var(--glow), 0 0 40px var(--hot), 0 0 72px var(--glow);
     }
 
     .layer {
@@ -526,6 +526,8 @@
     const spirits = [];
     const petals = [];
     const motes = [];
+    const stars = [];
+    const waves = [];
 
     let ws = null;
     let reconnectTimer = 0;
@@ -537,7 +539,7 @@
     const world = {
       time: 0,
       hue: 300,
-      trip: 0.22,
+      trip: 0.28,
       warp: 0,
       flash: 0,
       spin: 0.22,
@@ -545,8 +547,11 @@
       level: state.level || 1,
       lookX: 0,
       lookY: 0,
-      awake: 0.28,
-      patternId: state.pattern || "rainbow"
+      awake: 0.34,
+      patternId: state.pattern || "rainbow",
+      zoom: 1,
+      zoomPunch: 0,
+      flare: 0
     };
 
     const els = {
@@ -590,6 +595,7 @@
     canvas = document.getElementById("view");
     ctx = canvas.getContext("2d");
     seedMotes();
+    seedStars();
     fillForm();
     armStreamer(state.pattern, false);
     renderChips();
@@ -671,12 +677,17 @@
       world.level = 1;
       world.energy = 0;
       world.hue = 300;
-      world.trip = 0.22;
+      world.trip = 0.28;
       world.warp = 0;
       world.flash = 0;
       world.spin = 0.22;
+      world.zoom = 1;
+      world.zoomPunch = 0;
+      world.flare = 0;
+      world.awake = 0.34;
       spirits.length = 0;
       petals.length = 0;
+      waves.length = 0;
       board.clear();
       persist();
       renderHud();
@@ -799,8 +810,12 @@
       world.patternId = p.id;
       world.awake = 1;
       world.flash = 1;
+      world.flare = 1;
+      world.zoomPunch = Math.max(world.zoomPunch, 0.1);
       world.hue = p.hues[0];
       world.hueB = p.hues[1] ?? p.hues[0];
+      spawnWave(p.hues[0], 0.9);
+      burst(48, p.hues[0], 40);
       paintTheme();
       renderChips();
       const name = who || "the garden";
@@ -936,9 +951,13 @@
         world.awake = Math.min(1, world.awake + 0.12);
         world.flash = 0.5;
       }
-      world.trip = Math.min(1, world.trip + (combo ? 0.05 : 0.16 + Math.min(0.3, diamonds / 450)));
-      world.warp = Math.min(1.8, world.warp + (combo ? 0.1 : 0.32));
+      world.trip = Math.min(1, world.trip + (combo ? 0.07 : 0.22 + Math.min(0.35, diamonds / 380)));
+      world.warp = Math.min(2.2, world.warp + (combo ? 0.16 : 0.48));
       if (!combo) world.flash = 1;
+      else {
+        world.flare = Math.min(1, world.flare + 0.25);
+        spawnWave(world.hue, 0.28);
+      }
       paintTheme();
     }
 
@@ -982,6 +1001,11 @@
       world.flash = 1;
       world.trip = 1;
       world.awake = 1;
+      world.flare = 1;
+      world.zoomPunch = 0.22;
+      spawnWave(world.hue, 1.4);
+      spawnWave(world.hueB || world.hue + 40, 1.1);
+      burst(120, world.hue, 120);
       els.bloomedSub.textContent = `${gift.name} opened layer ${String(world.level + 1).padStart(2, "0")}`;
       els.bloomed.classList.add("show");
       burst(90, world.hue, 70);
@@ -1068,32 +1092,71 @@
       ctx.imageSmoothingQuality = "high";
     }
 
+    function capArray(arr, max) {
+      if (arr.length > max) arr.splice(0, arr.length - max);
+    }
+
     function seedMotes() {
       motes.length = 0;
-      for (let i = 0; i < 70; i++) {
+      for (let i = 0; i < 120; i++) {
         motes.push({
           a: Math.random() * Math.PI * 2,
-          r: 40 + Math.random() * 420,
-          s: 0.12 + Math.random() * 0.5,
-          sz: 1 + Math.random() * 2.4,
-          h: Math.random() * 360
+          r: 50 + Math.random() * 480,
+          s: 0.1 + Math.random() * 0.7,
+          sz: 0.8 + Math.random() * 3.4,
+          h: Math.random() * 360,
+          giant: Math.random() < 0.08
         });
       }
     }
 
-    function burst(radius, hue, n) {
-      for (let i = 0; i < n; i++) {
-        const a = Math.random() * Math.PI * 2;
-        const sp = 40 + Math.random() * 180;
-        petals.push({
-          x: w * 0.5, y: h * 0.52,
-          vx: Math.cos(a) * sp, vy: Math.sin(a) * sp,
-          life: 0.7 + Math.random() * 0.7,
-          max: 1,
-          hue: hue + Math.random() * 50,
-          sz: 3 + Math.random() * 7
+    function seedStars() {
+      stars.length = 0;
+      for (let i = 0; i < 190; i++) {
+        stars.push({
+          x: Math.random(),
+          y: Math.random(),
+          z: Math.random(),
+          sz: Math.pow(Math.random(), 2) * 2.6 + 0.35,
+          tw: Math.random() * Math.PI * 2,
+          h: Math.random()
         });
       }
+    }
+
+    function spawnWave(hue, power) {
+      waves.push({
+        r: 16,
+        vr: 240 + power * 380,
+        life: 1,
+        hue,
+        thick: 2 + power * 16,
+        a: 0.75 * Math.min(1.5, power)
+      });
+      capArray(waves, 14);
+    }
+
+    function burst(radius, hue, n) {
+      spawnWave(hue, 0.4 + n / 100);
+      for (let i = 0; i < n; i++) {
+        const a = Math.random() * Math.PI * 2;
+        const sp = 55 + Math.random() * 280;
+        const roll = Math.random();
+        petals.push({
+          x: w * 0.5,
+          y: h * 0.52,
+          vx: Math.cos(a) * sp,
+          vy: Math.sin(a) * sp,
+          life: 0.5 + Math.random() * 1,
+          max: 1,
+          hue: hue + (Math.random() - 0.5) * 80,
+          sz: 2 + Math.random() * 10,
+          kind: roll < 0.38 ? "spark" : roll < 0.72 ? "petal" : "glint",
+          rot: Math.random() * Math.PI * 2,
+          spin: (Math.random() - 0.5) * 10
+        });
+      }
+      capArray(petals, 420);
     }
 
     function loop(t) {
@@ -1103,61 +1166,200 @@
       world.time += dt;
       world.warp *= Math.pow(0.96, dt * 60);
       world.flash *= Math.pow(0.9, dt * 60);
-      world.trip = Math.max(0.18, world.trip - dt * 0.03);
-      world.awake = Math.max(0.28, world.awake - dt * 0.04);
-      world.spin += (0.22 + world.trip * 0.5 - world.spin) * Math.min(1, 0.4 * dt);
+      world.flare *= Math.pow(0.92, dt * 60);
+      world.zoomPunch *= Math.pow(0.9, dt * 60);
+      world.trip = Math.max(0.22, world.trip - dt * 0.028);
+      world.awake = Math.max(0.34, world.awake - dt * 0.035);
+      world.spin += (0.28 + world.trip * 0.7 - world.spin) * Math.min(1, 0.38 * dt);
+      world.zoom += (1 + world.zoomPunch + world.trip * 0.045 + world.flash * 0.03 - world.zoom) * Math.min(1, 0.14);
       tickPattern();
 
       if (overlay) ctx.clearRect(0, 0, w, h);
       else {
-        ctx.fillStyle = hsl(world.hue + 240, 40, 4, 0.16 + (1 - world.trip) * 0.08);
+        ctx.fillStyle = hsl(world.hue + 250, 38, 3, 0.08 + (1 - world.trip) * 0.05);
         ctx.fillRect(0, 0, w, h);
       }
 
+      const cx = w * 0.5, cy = h * 0.52;
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.scale(world.zoom, world.zoom);
+      ctx.translate(-cx, -cy);
+
+      drawStarfield(dt);
       drawNebula();
+      drawRibbons();
+      drawRays();
+      drawOrbitals();
       drawMotes(dt);
       drawMandala();
+      updateWaves(dt);
       updateSpirits(dt);
       updatePetals(dt);
       drawFlash();
+      drawFlare();
+      ctx.restore();
 
-      const rumble = world.flash * 4 + world.warp * 2;
-      canvas.style.transform = `translate(${Math.sin(world.time * 21) * rumble}px, ${Math.cos(world.time * 17) * rumble * 0.4}px)`;
-      canvas.style.filter = `saturate(${1.25 + world.trip * 0.9 + world.flash * 0.5}) contrast(${1.05 + world.flash * 0.15})`;
+      const rumble = world.flash * 5 + world.warp * 2.4 + world.flare * 2;
+      canvas.style.transform = `translate(${Math.sin(world.time * 23) * rumble}px, ${Math.cos(world.time * 18) * rumble * 0.45}px)`;
+      canvas.style.filter = `saturate(${1.4 + world.trip * 1.15 + world.flash * 0.7}) contrast(${1.1 + world.flash * 0.22}) brightness(${1.04 + world.flash * 0.2 + world.flare * 0.12})`;
       requestAnimationFrame(loop);
+    }
+
+    function drawStarfield(dt) {
+      const p = currentPattern();
+      ctx.save();
+      ctx.globalCompositeOperation = "lighter";
+      stars.forEach((s) => {
+        s.tw += dt * (1.4 + s.z * 2);
+        const twinkle = 0.28 + 0.72 * (0.5 + 0.5 * Math.sin(s.tw * 3.2));
+        const x = s.x * w + Math.sin(world.time * 0.08 + s.tw) * (6 + world.warp * 10);
+        const y = s.y * h + Math.cos(world.time * 0.06 + s.z * 4) * 5;
+        const sz = s.sz * (0.75 + world.trip * 0.7 + world.flash * 0.4);
+        ctx.fillStyle = hsl(patHue(s.h * 5), p.sat * 0.75, 86, twinkle * (0.22 + world.awake * 0.5));
+        ctx.fillRect(x, y, sz, sz);
+        if (s.sz > 1.7) {
+          ctx.fillStyle = hsl(patHue(s.h * 5), 30, 100, twinkle * 0.22);
+          ctx.fillRect(x - 4, y + sz * 0.35, sz + 8, 0.85);
+          ctx.fillRect(x + sz * 0.35, y - 4, 0.85, sz + 8);
+        }
+      });
+      ctx.restore();
     }
 
     function drawNebula() {
       const p = currentPattern();
-      const sat = p.sat * (0.45 + 0.55 * world.awake);
+      const sat = p.sat * (0.5 + 0.5 * world.awake);
       ctx.save();
       ctx.globalCompositeOperation = "lighter";
-      for (let i = 0; i < 4; i++) {
-        const cx = w * 0.5 + Math.sin(world.time * 0.25 + i * 1.7) * w * 0.12;
-        const cy = h * 0.52 + Math.cos(world.time * 0.2 + i) * h * 0.08;
-        const rad = (180 + i * 70) * (1 + world.trip * 0.35);
-        const g = ctx.createRadialGradient(cx, cy, 8, cx, cy, rad);
-        g.addColorStop(0, hsl(patHue(world.time * (p.speed / 18) + i), sat, p.lit, 0.16 + world.flash * 0.12));
+      for (let i = 0; i < 7; i++) {
+        const cx = w * 0.5 + Math.sin(world.time * 0.22 + i * 1.5) * w * 0.16;
+        const cy = h * 0.52 + Math.cos(world.time * 0.18 + i * 0.9) * h * 0.11;
+        const rad = (150 + i * 62) * (1 + world.trip * 0.42 + world.flash * 0.12);
+        const g = ctx.createRadialGradient(cx, cy, 6, cx, cy, rad);
+        g.addColorStop(0, hsl(patHue(world.time * (p.speed / 16) + i * 0.7), sat, p.lit + 6, 0.2 + world.flash * 0.16));
+        g.addColorStop(0.45, hsl(patHue(world.time * 0.2 + i), sat, p.lit - 8, 0.07));
         g.addColorStop(1, "transparent");
         ctx.fillStyle = g;
         ctx.beginPath();
-        ctx.arc(cx, cy, rad, 0, Math.PI * 2);
+        ctx.ellipse(cx, cy, rad, rad * (0.62 + 0.12 * Math.sin(world.time + i)), world.time * 0.05 + i, 0, Math.PI * 2);
         ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    function drawRibbons() {
+      const p = currentPattern();
+      const sat = p.sat * (0.5 + 0.5 * world.awake);
+      ctx.save();
+      ctx.translate(w * 0.5, h * 0.52);
+      ctx.globalCompositeOperation = "lighter";
+      ctx.lineCap = "round";
+      for (let b = 0; b < 5; b++) {
+        const base = Math.min(w, h) * (0.15 + b * 0.058);
+        ctx.beginPath();
+        for (let i = 0; i <= 72; i++) {
+          const t = i / 72;
+          const ang = t * Math.PI * 2 + world.time * (0.18 + b * 0.05);
+          const r = base
+            + Math.sin(t * 11 + world.time * 1.6 + b) * (16 + world.trip * 28)
+            + Math.sin(t * 5 + world.warp * 3 + b) * 10;
+          const x = Math.cos(ang) * r;
+          const y = Math.sin(ang) * r * (0.84 + 0.08 * Math.sin(world.time * 0.7 + b));
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.closePath();
+        ctx.strokeStyle = hsl(patHue(world.time * 0.45 + b), sat, p.lit, 0.2 + world.trip * 0.16 + world.flash * 0.1);
+        ctx.lineWidth = 2.4 + b * 0.7 + world.trip * 2;
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    function drawRays() {
+      const p = currentPattern();
+      const sat = p.sat * (0.45 + 0.55 * world.awake);
+      ctx.save();
+      ctx.translate(w * 0.5, h * 0.52);
+      ctx.rotate(world.time * 0.07);
+      ctx.globalCompositeOperation = "lighter";
+      const n = 16;
+      const reach = Math.min(w, h) * (0.46 + world.trip * 0.22);
+      for (let i = 0; i < n; i++) {
+        const pulse = 0.45 + 0.55 * Math.sin(world.time * 2.1 + i * 0.7);
+        ctx.save();
+        ctx.rotate((Math.PI * 2 / n) * i);
+        const g = ctx.createLinearGradient(0, 0, reach, 0);
+        g.addColorStop(0, hsl(patHue(i * 0.35), sat, p.lit + 8, (0.1 + world.flash * 0.18) * pulse * world.awake));
+        g.addColorStop(0.55, hsl(patHue(i * 0.35 + 0.8), sat, p.lit, 0.04 * pulse));
+        g.addColorStop(1, "transparent");
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.moveTo(8, -1.4);
+        ctx.lineTo(reach, -7 - world.trip * 12);
+        ctx.lineTo(reach, 7 + world.trip * 12);
+        ctx.lineTo(8, 1.4);
+        ctx.fill();
+        ctx.restore();
+      }
+      ctx.restore();
+    }
+
+    function drawOrbitals() {
+      const p = currentPattern();
+      const sat = p.sat * (0.5 + 0.5 * world.awake);
+      ctx.save();
+      ctx.translate(w * 0.5, h * 0.52);
+      ctx.globalCompositeOperation = "lighter";
+      for (let ring = 0; ring < 3; ring++) {
+        const rr = Math.min(w, h) * (0.13 + ring * 0.085) * (1 + world.trip * 0.1 + world.flash * 0.05);
+        ctx.strokeStyle = hsl(patHue(ring + world.time * 0.2), sat, p.lit, 0.22 + world.flash * 0.18);
+        ctx.lineWidth = 1.15 + world.trip;
+        ctx.setLineDash([7 + ring * 5, 11]);
+        ctx.lineDashOffset = world.time * (22 + ring * 14) * (ring % 2 ? -1 : 1);
+        ctx.beginPath();
+        ctx.ellipse(0, 0, rr, rr * 0.7, ring * 0.55 + world.time * 0.06, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        const gems = 6 + ring * 2;
+        for (let g = 0; g < gems; g++) {
+          const a = world.time * (0.45 + ring * 0.18) * (ring % 2 ? -1 : 1) + (Math.PI * 2 * g) / gems;
+          const x = Math.cos(a) * rr;
+          const y = Math.sin(a) * rr * 0.7;
+          const rad = 2 + (g % 3) * 0.8 + world.trip * 1.4;
+          const glow = ctx.createRadialGradient(x, y, 0, x, y, rad * 7);
+          glow.addColorStop(0, "#fff");
+          glow.addColorStop(0.28, hsl(patHue(g * 0.4 + ring), sat, 74, 0.85));
+          glow.addColorStop(1, "transparent");
+          ctx.fillStyle = glow;
+          ctx.beginPath();
+          ctx.arc(x, y, rad * 7, 0, Math.PI * 2);
+          ctx.fill();
+        }
       }
       ctx.restore();
     }
 
     function drawMotes(dt) {
       const cx = w * 0.5, cy = h * 0.52;
+      const p = currentPattern();
+      const sat = p.sat * (0.5 + 0.5 * world.awake);
       ctx.save();
       ctx.globalCompositeOperation = "lighter";
       motes.forEach((m) => {
-        m.a += m.s * dt * (0.4 + world.spin);
-        const x = cx + Math.cos(m.a + world.time * 0.1) * m.r * (0.7 + 0.3 * Math.sin(world.time + m.h));
-        const y = cy + Math.sin(m.a + world.time * 0.1) * m.r * 0.62;
-        ctx.fillStyle = hsl(patHue(m.h / 90), currentPattern().sat * (0.5 + 0.5 * world.awake), 70, 0.35);
+        m.a += m.s * dt * (0.45 + world.spin * 0.8);
+        const swirl = 0.68 + 0.32 * Math.sin(world.time * 0.8 + m.h);
+        const x = cx + Math.cos(m.a + world.time * 0.12) * m.r * swirl;
+        const y = cy + Math.sin(m.a + world.time * 0.12) * m.r * 0.6 * swirl;
+        const sz = m.giant ? m.sz * (3.2 + world.trip) : m.sz * (1 + world.trip * 0.4);
+        const glow = ctx.createRadialGradient(x, y, 0, x, y, sz * (m.giant ? 8 : 3.5));
+        glow.addColorStop(0, hsl(patHue(m.h / 80), sat, 86, 0.7));
+        glow.addColorStop(0.35, hsl(patHue(m.h / 80), sat, p.lit, m.giant ? 0.28 : 0.16));
+        glow.addColorStop(1, "transparent");
+        ctx.fillStyle = glow;
         ctx.beginPath();
-        ctx.arc(x, y, m.sz, 0, Math.PI * 2);
+        ctx.arc(x, y, sz * (m.giant ? 8 : 3.5), 0, Math.PI * 2);
         ctx.fill();
       });
       ctx.restore();
@@ -1167,84 +1369,165 @@
       const cx = w * 0.5;
       const cy = h * 0.52;
       const n = folds();
-      const pulse = 1 + Math.sin(world.time * 3.2) * 0.06 + world.flash * 0.12;
+      const pulse = 1 + Math.sin(world.time * 3.4) * 0.07 + world.flash * 0.16 + world.warp * 0.04;
       ctx.save();
       ctx.translate(cx, cy);
-      ctx.rotate(world.time * world.spin);
       ctx.globalCompositeOperation = "lighter";
 
-      for (let k = 0; k < n; k++) {
-        ctx.save();
-        ctx.rotate((Math.PI * 2 / n) * k);
-        if (k % 2) ctx.scale(-1, 1);
-        drawWedge(pulse);
-        ctx.restore();
-      }
+      ctx.save();
+      ctx.rotate(-world.time * world.spin * 0.32);
+      ctx.globalAlpha = 0.42 + world.trip * 0.12;
+      drawFoldLayer(pulse * 1.22, n, 0.92);
+      ctx.restore();
+
+      ctx.save();
+      ctx.rotate(world.time * world.spin);
+      drawFoldLayer(pulse, n, 1);
+      ctx.restore();
+
+      ctx.save();
+      ctx.rotate(-world.time * world.spin * 1.55);
+      ctx.globalAlpha = 0.9;
+      drawFoldLayer(pulse * 0.4, Math.max(6, n - 2), 1.05);
+      ctx.restore();
 
       drawCore(pulse);
       ctx.restore();
     }
 
-    function drawWedge(pulse) {
+    function drawFoldLayer(pulse, n, scale) {
+      for (let k = 0; k < n; k++) {
+        ctx.save();
+        ctx.rotate((Math.PI * 2 / n) * k);
+        if (k % 2) ctx.scale(-1, 1);
+        drawWedge(pulse, scale);
+        ctx.restore();
+      }
+    }
+
+    function drawWedge(pulse, scale) {
       const p = currentPattern();
-      const sat = p.sat * (0.5 + 0.5 * world.awake);
-      const len = Math.min(w, h) * (0.28 + world.trip * 0.1) * pulse;
+      const sat = p.sat * (0.55 + 0.45 * world.awake);
+      const len = Math.min(w, h) * (0.3 + world.trip * 0.13) * pulse * (scale || 1);
       ctx.lineCap = "round";
       ctx.lineJoin = "round";
-      for (let arm = 0; arm < 3; arm++) {
+
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      for (let i = 0; i <= 26; i++) {
+        const t = i / 26;
+        const a = t * 0.64;
+        const r = t * len;
+        const wob = Math.sin(t * 8 + world.time * 2.5 + world.warp * 5) * (14 + world.trip * 30) * t;
+        ctx.lineTo(
+          Math.cos(a) * r + Math.cos(a + Math.PI / 2) * wob,
+          Math.sin(a) * r + Math.sin(a + Math.PI / 2) * wob
+        );
+      }
+      ctx.closePath();
+      const pg = ctx.createLinearGradient(0, 0, len * 0.85, len * 0.18);
+      pg.addColorStop(0, hsl(world.hue, sat, Math.min(88, p.lit + 14), 0.22 + world.trip * 0.18 + world.flash * 0.08));
+      pg.addColorStop(0.55, hsl(world.hueB, sat, p.lit, 0.1));
+      pg.addColorStop(1, "transparent");
+      ctx.fillStyle = pg;
+      ctx.fill();
+
+      for (let arm = 0; arm < 4; arm++) {
         ctx.beginPath();
-        for (let i = 0; i <= 36; i++) {
-          const t = i / 36;
-          const a = t * 0.42 + arm * 0.08;
-          const r = 24 + t * len;
-          const wob = Math.sin(t * (7 + arm * 2) + world.time * (2.2 + arm) + world.warp * 4) * (8 + world.trip * 22) * t;
+        for (let i = 0; i <= 30; i++) {
+          const t = i / 30;
+          const a = t * 0.5 + arm * 0.065;
+          const r = 16 + t * len;
+          const wob = Math.sin(t * (9 + arm) + world.time * (2.5 + arm * 0.35) + world.warp * 5) * (11 + world.trip * 26) * t
+            + Math.sin(t * 21 + world.time * 5.2) * 5 * t;
           const x = Math.cos(a) * r + Math.cos(a + Math.PI / 2) * wob;
           const y = Math.sin(a) * r + Math.sin(a + Math.PI / 2) * wob;
           if (i === 0) ctx.moveTo(x, y);
           else ctx.lineTo(x, y);
         }
-        ctx.strokeStyle = hsl(patHue(world.time * (p.speed / 14) + arm), sat, p.lit, 0.55);
-        ctx.lineWidth = 2.2 + world.trip * 3.5 + arm;
+        ctx.strokeStyle = hsl(patHue(world.time * (p.speed / 12) + arm * 0.45), sat, p.lit, 0.18);
+        ctx.lineWidth = 11 + world.trip * 7;
+        ctx.stroke();
+        ctx.strokeStyle = hsl(patHue(world.time * (p.speed / 12) + arm * 0.45), sat, Math.min(86, p.lit + 8), 0.72);
+        ctx.lineWidth = 1.7 + world.trip * 2.4 + arm * 0.25;
         ctx.stroke();
       }
-
-      ctx.fillStyle = hsl(world.hueB, sat, p.lit, 0.12 + world.trip * 0.1);
-      ctx.beginPath();
-      ctx.moveTo(0, 0);
-      ctx.quadraticCurveTo(len * 0.35, len * 0.12, len * 0.72, 8);
-      ctx.quadraticCurveTo(len * 0.3, -10, 0, 0);
-      ctx.fill();
     }
 
     function drawCore(pulse) {
       const p = currentPattern();
-      const sat = p.sat * (0.55 + 0.45 * world.awake);
-      const r = (34 + world.trip * 22 + world.flash * 16) * pulse;
-      const g = ctx.createRadialGradient(world.lookX * 8, world.lookY * 8, 4, 0, 0, r * 1.6);
+      const sat = p.sat * (0.6 + 0.4 * world.awake);
+      const r = (38 + world.trip * 28 + world.flash * 22 + world.flare * 10) * pulse;
+      const g = ctx.createRadialGradient(world.lookX * 10, world.lookY * 10, 3, 0, 0, r * 1.85);
       g.addColorStop(0, "#fff");
-      g.addColorStop(0.14, hsl(world.hueB, sat, Math.min(86, p.lit + 20)));
-      g.addColorStop(0.38, hsl(world.hue, sat, p.lit));
-      g.addColorStop(0.7, hsl(world.hueC, Math.max(40, sat - 15), 18, 0.85));
+      g.addColorStop(0.1, hsl(world.hueB, sat, 92));
+      g.addColorStop(0.28, hsl(world.hue, sat, p.lit + 8));
+      g.addColorStop(0.52, hsl(world.hueC, sat, p.lit - 6, 0.9));
+      g.addColorStop(0.78, hsl(world.hueC, Math.max(35, sat - 20), 12, 0.55));
       g.addColorStop(1, "transparent");
       ctx.fillStyle = g;
       ctx.beginPath();
-      ctx.arc(0, 0, r * 1.55, 0, Math.PI * 2);
+      ctx.arc(0, 0, r * 1.85, 0, Math.PI * 2);
       ctx.fill();
 
-      ctx.strokeStyle = hsl(world.hueB, sat, Math.min(80, p.lit + 12), 0.7);
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.arc(0, 0, r * 0.92, 0, Math.PI * 2);
-      ctx.stroke();
+      ctx.save();
+      ctx.rotate(world.time * 0.85);
+      for (let i = 0; i < 10; i++) {
+        ctx.rotate(Math.PI / 5);
+        ctx.strokeStyle = hsl(patHue(i * 0.3), sat, 82, 0.42 + world.flash * 0.25);
+        ctx.lineWidth = 1.3;
+        ctx.beginPath();
+        ctx.moveTo(r * 0.34, 0);
+        ctx.lineTo(r * 1.42, 0);
+        ctx.stroke();
+      }
+      ctx.restore();
 
-      ctx.fillStyle = hsl(world.hueC, 50, 8, 0.9);
+      for (let i = 0; i < 4; i++) {
+        ctx.strokeStyle = hsl(patHue(world.time * 0.3 + i), sat, 78, 0.4 - i * 0.06);
+        ctx.lineWidth = 1.4 + (i === 0 ? 1 : 0);
+        ctx.beginPath();
+        ctx.arc(0, 0, r * (0.62 + i * 0.24 + Math.sin(world.time * 2.4 + i) * 0.045), 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
+      ctx.fillStyle = hsl(world.hueC, 55, 6, 0.92);
       ctx.beginPath();
-      ctx.arc(world.lookX * 6, world.lookY * 6, r * 0.28, 0, Math.PI * 2);
+      ctx.arc(world.lookX * 7, world.lookY * 7, r * 0.3, 0, Math.PI * 2);
+      ctx.fill();
+      const iris = ctx.createRadialGradient(world.lookX * 7, world.lookY * 7, 0, world.lookX * 7, world.lookY * 7, r * 0.3);
+      iris.addColorStop(0, hsl(world.hue, sat, 70, 0.55));
+      iris.addColorStop(1, "transparent");
+      ctx.fillStyle = iris;
+      ctx.beginPath();
+      ctx.arc(world.lookX * 7, world.lookY * 7, r * 0.3, 0, Math.PI * 2);
       ctx.fill();
       ctx.fillStyle = "#fff";
       ctx.beginPath();
-      ctx.arc(world.lookX * 6 - 4, world.lookY * 6 - 5, r * 0.08, 0, Math.PI * 2);
+      ctx.arc(world.lookX * 7 - 5, world.lookY * 7 - 6, r * 0.09, 0, Math.PI * 2);
       ctx.fill();
+    }
+
+    function updateWaves(dt) {
+      ctx.save();
+      ctx.globalCompositeOperation = "lighter";
+      const cx = w * 0.5, cy = h * 0.52;
+      for (let i = waves.length - 1; i >= 0; i--) {
+        const v = waves[i];
+        v.r += v.vr * dt;
+        v.life -= dt * 0.8;
+        const a = Math.max(0, v.life) * v.a;
+        ctx.strokeStyle = hsl(v.hue, 96, 72, a);
+        ctx.lineWidth = Math.max(0.6, v.thick * v.life);
+        ctx.beginPath();
+        ctx.ellipse(cx, cy, v.r, v.r * 0.84, world.time * 0.2, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.strokeStyle = hsl(v.hue + 50, 100, 88, a * 0.45);
+        ctx.lineWidth = 1.1;
+        ctx.stroke();
+        if (v.life <= 0) waves.splice(i, 1);
+      }
+      ctx.restore();
     }
 
     function updateSpirits(dt) {
@@ -1252,29 +1535,61 @@
       let lx = 0, ly = 0, nlook = 0;
       ctx.save();
       ctx.globalCompositeOperation = "lighter";
+      ctx.lineCap = "round";
       for (let i = spirits.length - 1; i >= 0; i--) {
         const s = spirits[i];
         s.ang += s.spin * dt;
-        s.rad -= (48 + world.spin * 36 + Math.min(70, s.diamonds * 0.15)) * dt;
+        s.rad -= (52 + world.spin * 40 + Math.min(80, s.diamonds * 0.16)) * dt;
         const x = cx + Math.cos(s.ang) * s.rad;
         const y = cy + Math.sin(s.ang) * s.rad * 0.88;
+        const tx = cx + Math.cos(s.ang - Math.sign(s.spin) * 0.42) * (s.rad + 28);
+        const ty = cy + Math.sin(s.ang - Math.sign(s.spin) * 0.42) * (s.rad + 28) * 0.88;
         lx += (x - cx) / Math.max(40, s.rad);
         ly += (y - cy) / Math.max(40, s.rad);
         nlook += 1;
 
-        const glow = ctx.createRadialGradient(x, y, 1, x, y, s.size * 2.4);
+        for (let k = 1; k <= 8; k++) {
+          const f = k / 8;
+          ctx.fillStyle = hsl(s.hue, 100, 64, 0.2 * (1 - f));
+          ctx.beginPath();
+          ctx.arc(x + (tx - x) * f, y + (ty - y) * f, s.size * (1.7 - f), 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        ctx.strokeStyle = hsl(s.hue, 100, 78, 0.55);
+        ctx.lineWidth = 2.2;
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(tx, ty);
+        ctx.stroke();
+
+        if (s.rad < Math.min(w, h) * 0.38) {
+          ctx.strokeStyle = hsl(s.hue, 100, 86, 0.28);
+          ctx.lineWidth = 1.1;
+          ctx.beginPath();
+          ctx.moveTo(cx, cy);
+          for (let k = 1; k <= 6; k++) {
+            const f = k / 6;
+            const jx = Math.sin(world.time * 40 + k * 9 + s.ang) * 18 * (1 - f);
+            const jy = Math.cos(world.time * 37 + k * 7 + s.ang) * 18 * (1 - f);
+            ctx.lineTo(cx + (x - cx) * f + jx, cy + (y - cy) * f + jy);
+          }
+          ctx.stroke();
+        }
+
+        const glow = ctx.createRadialGradient(x, y, 1, x, y, s.size * 3.2);
         glow.addColorStop(0, "#fff");
-        glow.addColorStop(0.25, hsl(s.hue, 100, 62));
+        glow.addColorStop(0.22, hsl(s.hue, 100, 68));
         glow.addColorStop(1, "transparent");
         ctx.fillStyle = glow;
         ctx.beginPath();
-        ctx.arc(x, y, s.size * 2.4, 0, Math.PI * 2);
+        ctx.arc(x, y, s.size * 3.2, 0, Math.PI * 2);
         ctx.fill();
 
         ctx.fillStyle = "#fff";
-        ctx.font = `800 ${Math.max(11, Math.min(18, s.size))}px Nunito, sans-serif`;
+        ctx.font = `800 ${Math.max(12, Math.min(20, s.size))}px Nunito, sans-serif`;
         ctx.textAlign = "center";
-        ctx.fillText(s.name, x, y - s.size - 8);
+        ctx.fillText(s.name, x, y - s.size - 10);
 
         if (s.rad < 36) {
           absorb(s);
@@ -1294,18 +1609,38 @@
     function updatePetals(dt) {
       ctx.save();
       ctx.globalCompositeOperation = "lighter";
+      ctx.lineCap = "round";
       for (let i = petals.length - 1; i >= 0; i--) {
         const p = petals[i];
         p.x += p.vx * dt;
         p.y += p.vy * dt;
-        p.vx *= 0.98;
-        p.vy *= 0.98;
+        p.vx *= 0.978;
+        p.vy *= 0.978;
+        p.vy += 8 * dt;
         p.life -= dt;
+        p.rot = (p.rot || 0) + (p.spin || 0) * dt;
         const a = Math.max(0, p.life / (p.max || 1));
-        ctx.fillStyle = hsl(p.hue, 95, 62, a);
-        ctx.beginPath();
-        ctx.ellipse(p.x, p.y, p.sz * (1.6 - a), p.sz * a * 1.8, world.time, 0, Math.PI * 2);
-        ctx.fill();
+        if (p.kind === "spark") {
+          ctx.strokeStyle = hsl(p.hue, 100, 74, a);
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.moveTo(p.x, p.y);
+          ctx.lineTo(p.x - p.vx * 0.06, p.y - p.vy * 0.06);
+          ctx.stroke();
+        } else if (p.kind === "glint") {
+          ctx.fillStyle = hsl(p.hue, 40, 100, a);
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.rotate(p.rot);
+          ctx.fillRect(-5, -0.6, 10, 1.2);
+          ctx.fillRect(-0.6, -5, 1.2, 10);
+          ctx.restore();
+        } else {
+          ctx.fillStyle = hsl(p.hue, 96, 64, a);
+          ctx.beginPath();
+          ctx.ellipse(p.x, p.y, p.sz * (1.8 - a), p.sz * a * 2.1, p.rot, 0, Math.PI * 2);
+          ctx.fill();
+        }
         if (p.life <= 0) petals.splice(i, 1);
       }
       ctx.restore();
@@ -1315,12 +1650,39 @@
       if (world.flash < 0.04) return;
       ctx.save();
       ctx.globalCompositeOperation = "lighter";
-      const g = ctx.createRadialGradient(w * 0.5, h * 0.52, 10, w * 0.5, h * 0.52, Math.max(w, h) * 0.7);
-      g.addColorStop(0, hsl(world.hue, currentPattern().sat, 72, world.flash * 0.32));
-      g.addColorStop(0.45, hsl(world.hueB, currentPattern().sat, 55, world.flash * 0.1));
+      const g = ctx.createRadialGradient(w * 0.5, h * 0.52, 8, w * 0.5, h * 0.52, Math.max(w, h) * 0.78);
+      g.addColorStop(0, hsl(world.hue, currentPattern().sat, 80, world.flash * 0.38));
+      g.addColorStop(0.4, hsl(world.hueB, currentPattern().sat, 58, world.flash * 0.14));
       g.addColorStop(1, "transparent");
       ctx.fillStyle = g;
       ctx.fillRect(0, 0, w, h);
+      ctx.restore();
+    }
+
+    function drawFlare() {
+      const a = Math.max(world.flare, world.flash * 0.85);
+      if (a < 0.05) return;
+      const cx = w * 0.5, cy = h * 0.52;
+      ctx.save();
+      ctx.globalCompositeOperation = "lighter";
+      const g = ctx.createLinearGradient(0, cy, w, cy);
+      g.addColorStop(0, "transparent");
+      g.addColorStop(0.5, hsl(world.hue, 100, 86, a * 0.28));
+      g.addColorStop(1, "transparent");
+      ctx.fillStyle = g;
+      ctx.fillRect(0, cy - 1.5 - a * 7, w, 3 + a * 14);
+      for (let i = -4; i <= 4; i++) {
+        if (!i) continue;
+        const x = cx + i * 78;
+        const rad = 7 + Math.abs(i) * 3.5;
+        const og = ctx.createRadialGradient(x, cy, 0, x, cy, rad * 3.2);
+        og.addColorStop(0, hsl(i % 2 ? world.hueB : world.hue, 100, 74, a * 0.2));
+        og.addColorStop(1, "transparent");
+        ctx.fillStyle = og;
+        ctx.beginPath();
+        ctx.arc(x, cy, rad * 3.2, 0, Math.PI * 2);
+        ctx.fill();
+      }
       ctx.restore();
     }
 
