@@ -45,9 +45,35 @@
       inset: 0;
       pointer-events: none;
       z-index: 6;
-      background:
-        repeating-linear-gradient(to bottom, transparent 0 3px, rgba(0, 0, 0, 0.05) 4px),
-        radial-gradient(ellipse at center, transparent 52%, rgba(0, 0, 0, 0.42) 100%);
+      background: radial-gradient(ellipse at center, transparent 58%, rgba(0, 0, 0, 0.38) 100%);
+    }
+
+    .speedo {
+      position: absolute;
+      left: 50%;
+      bottom: 22px;
+      transform: translateX(-50%);
+      z-index: 8;
+      text-align: center;
+      pointer-events: none;
+      text-shadow: 0 2px 0 #000, 0 0 18px rgba(0, 232, 255, 0.7);
+    }
+
+    .speedo b {
+      display: block;
+      font-family: Orbitron, sans-serif;
+      font-size: clamp(28px, 4.2vw, 52px);
+      font-weight: 900;
+      color: #fff;
+      letter-spacing: 0.06em;
+      line-height: 0.9;
+    }
+
+    .speedo span {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.42em;
+      color: var(--cyan);
     }
 
     .hud, .side, .banner, .combo, .cleared, .settings, .pilot {
@@ -375,6 +401,11 @@
     <div class="kicker" id="pilotLabel">Your program</div>
   </aside>
 
+  <div class="speedo" aria-hidden="true">
+    <b id="speedNum">164</b>
+    <span>MPH</span>
+  </div>
+
   <div class="combo" id="combo">
     <div class="kicker" id="comboWho">turbo</div>
     <strong id="comboHits">x1</strong>
@@ -424,12 +455,12 @@
 
   <script>
     const DEFAULTS = { wsUrl: "ws://localhost:21213/", minDiamonds: 0, baseNeed: 500 };
-    const LANES = [-210, -140, -70, 70, 140, 210];
+    const LANES = [-96, -58, -24, 24, 58, 96];
     const PALETTES = [
-      { grid: "#00e8ff", hot: "#ff6a00", fog: "#00131c" },
-      { grid: "#3df0ff", hot: "#ff8a1a", fog: "#00141f" },
-      { grid: "#ff6a00", hot: "#00e8ff", fog: "#140800" },
-      { grid: "#ff2bd6", hot: "#00e8ff", fog: "#120018" },
+      { grid: "#00e8ff", hot: "#ff6a00", fog: "#07090f" },
+      { grid: "#3df0ff", hot: "#ff8a1a", fog: "#070a12" },
+      { grid: "#ff6a00", hot: "#00e8ff", fog: "#0c0806" },
+      { grid: "#ff2bd6", hot: "#00e8ff", fog: "#0a0610" },
       { grid: "#ffffff", hot: "#00e8ff", fog: "#07070c" }
     ];
 
@@ -449,8 +480,8 @@
     let canvas, ctx, w = 0, h = 0, last = 0;
 
     const sprites = {
-      cyan: loadImg("assets/cycle-cyan.png"),
-      orange: loadImg("assets/cycle-orange.png"),
+      cyan: loadImg("assets/shotaro-cyan.png"),
+      orange: loadImg("assets/shotaro-orange.png"),
       riderCyan: loadImg("assets/rider-cyan.png"),
       riderOrange: loadImg("assets/rider-orange.png")
     };
@@ -463,7 +494,9 @@
       shake: 0,
       time: 0,
       camX: 0,
-      steer: 0
+      steer: 0,
+      playerZ: 68,
+      playerTrail: []
     };
 
     const els = {
@@ -489,7 +522,8 @@
       settings: document.getElementById("settings"),
       wsUrl: document.getElementById("wsUrl"),
       minDiamonds: document.getElementById("minDiamonds"),
-      baseNeed: document.getElementById("baseNeed")
+      baseNeed: document.getElementById("baseNeed"),
+      speedNum: document.getElementById("speedNum")
     };
 
     if (params.has("overlay")) document.body.classList.add("overlay");
@@ -501,7 +535,7 @@
     fillForm();
     renderHud();
     connect();
-    spawnBikes(12);
+    spawnBikes(8);
     window.addEventListener("resize", resize);
     resize();
     requestAnimationFrame(loop);
@@ -686,7 +720,7 @@
       let best = null;
       let bestZ = 1e9;
       bikes.forEach((b) => {
-        if (b.z > 110 && b.z < bestZ) {
+        if (b.z > 88 && b.z < bestZ) {
           best = b;
           bestZ = b.z;
         }
@@ -719,7 +753,7 @@
         persist();
         renderHud();
         renderBoard();
-        spawnBikes(12 + Math.min(4, world.level));
+        spawnBikes(8);
         els.cleared.classList.remove("show");
         clearing = false;
       }, 2600);
@@ -797,30 +831,36 @@
     }
 
     function project(x, y, z) {
-      if (z < 16) return null;
-      const fov = Math.max(260, h * 0.48);
-      const horizon = h * 0.33;
-      const camY = h * 0.13;
+      if (z < 14) return null;
+      const fov = Math.max(340, h * 0.58);
+      const horizon = h * 0.36;
+      const camH = 24;
       const s = fov / z;
-      return { x: w * 0.5 + x * s, y: horizon + (camY - y) * s, s };
+      return {
+        x: w * 0.5 + (x - world.camX) * s,
+        y: horizon + (camH - y) * s * 0.9,
+        s
+      };
     }
 
     function spawnBikes(n) {
       bikes.length = 0;
+      world.playerTrail = [];
       for (let i = 0; i < n; i++) {
-        const near = i < 6;
         const orange = i % 2 === 1;
         const lane = LANES[i % LANES.length];
+        const near = i < 4;
         bikes.push({
           x: lane,
           targetX: lane,
-          z: near ? 128 + (i % 3) * 16 : 198 + ((i - 6) * 34) % 180,
-          vz: near ? (Math.random() - 0.18) * 0.32 : (Math.random() - 0.4) * 0.95,
+          z: near ? 92 + i * 14 : 160 + ((i - 4) * 28) % 150,
+          vz: near ? (Math.random() - 0.2) * 0.45 : (Math.random() - 0.35) * 1.1,
           color: orange ? theme().hot : theme().grid,
           kind: orange ? "orange" : "cyan",
-          laneTimer: near ? 2.4 + Math.random() * 2.8 : 0.8 + Math.random() * 1.6,
+          laneTimer: 0.4 + Math.random() * 1.4,
           lean: 0,
-          phase: Math.random() * Math.PI * 2
+          phase: Math.random() * Math.PI * 2,
+          trail: []
         });
       }
     }
@@ -846,69 +886,87 @@
       }
     }
 
+    function emitTrail(trail, x, z, max) {
+      trail.unshift({ x, z });
+      if (trail.length > max) trail.length = max;
+    }
+
+    function driftTrail(trail, dz) {
+      for (let i = 0; i < trail.length; i++) trail[i].z -= dz;
+      while (trail.length && trail[trail.length - 1].z < 16) trail.pop();
+    }
+
     function loop(t) {
       if (!last) last = t;
       const dt = Math.min(0.05, (t - last) / 1000);
       last = t;
       world.time += dt;
       const pal = theme();
-      const pace = 4.2 + world.level * 0.28 + world.turbo * 0.55;
+      const pace = 5.4 + world.level * 0.32 + world.turbo * 0.7;
       const frame = dt * 60;
-      world.scroll += pace * frame * 14;
+      const dz = pace * frame * 1.05;
+      world.scroll += pace * frame * 18;
       world.turbo *= Math.pow(0.985, frame);
       world.shake *= Math.pow(0.88, frame);
 
-      const packX = bikes.reduce((s, b) => s + b.x, 0) / Math.max(1, bikes.length);
-      world.steer += (packX * 0.012 - world.steer) * Math.min(1, 2.2 * dt);
+      const weave = Math.sin(world.time * 0.85) * 10 + Math.sin(world.time * 2.1) * 4;
+      world.steer += (weave - world.steer) * Math.min(1, 2.6 * dt);
+      world.camX += (world.steer * 0.22 - world.camX) * Math.min(1, 3.4 * dt);
+
+      driftTrail(world.playerTrail, dz);
+      emitTrail(world.playerTrail, world.steer * 0.08, world.playerZ, 48);
+      bikes.forEach((b) => {
+        driftTrail(b.trail, dz);
+        emitTrail(b.trail, b.x, b.z, 70);
+      });
 
       ctx.fillStyle = pal.fog;
       ctx.fillRect(0, 0, w, h);
       drawSky(pal);
       drawCity(pal);
       drawRoad(pal);
-      drawGrid(pal);
-      drawSpeedLines(pal, pace);
+      drawLamps(pal);
+      drawTrail(world.playerTrail, pal.grid, 20);
+      bikes.forEach((b) => drawTrail(b.trail, b.color, 18));
       updateBikes(dt, pal);
       updateDiscs(frame, pal);
       updateVoxels(frame);
       drawPlayer(pal);
       drawSparks(frame);
+      drawMotion(pace);
 
-      const rumble = 0.35 + world.turbo * 0.12 + world.shake * 0.2;
-      const dx = Math.sin(world.time * 31) * rumble;
-      const dy = Math.cos(world.time * 27) * rumble * 0.45;
-      canvas.style.transform = `translate(${dx}px, ${dy}px)`;
+      const mph = Math.round(148 + pace * 7 + Math.sin(world.time * 9) * 3);
+      if (els.speedNum) els.speedNum.textContent = String(mph);
+
+      const rumble = 0.45 + world.turbo * 0.16 + world.shake * 0.22;
+      const dx = Math.sin(world.time * 29) * rumble;
+      const dy = Math.cos(world.time * 23) * rumble * 0.4;
+      const roll = world.steer * 0.035 + Math.sin(world.time * 2.4) * 0.15;
+      canvas.style.transform = `translate(${dx}px, ${dy}px) rotate(${roll}deg)`;
 
       requestAnimationFrame(loop);
     }
 
     function drawSky(pal) {
-      const g = ctx.createLinearGradient(0, 0, 0, h * 0.42);
-      g.addColorStop(0, "#000");
-      g.addColorStop(1, pal.fog);
+      const g = ctx.createLinearGradient(0, 0, 0, h * 0.5);
+      g.addColorStop(0, "#02040a");
+      g.addColorStop(0.62, "#0a1020");
+      g.addColorStop(1, "#16110c");
       ctx.fillStyle = g;
-      ctx.fillRect(0, 0, w, h * 0.42);
-      const hg = ctx.createRadialGradient(w / 2, h * 0.33, 10, w / 2, h * 0.33, w * 0.42);
-      hg.addColorStop(0, pal.hot + "aa");
-      hg.addColorStop(0.18, pal.grid + "44");
+      ctx.fillRect(0, 0, w, h * 0.5);
+      const hg = ctx.createRadialGradient(w / 2, h * 0.36, 6, w / 2, h * 0.36, w * 0.5);
+      hg.addColorStop(0, "rgba(255, 150, 55, 0.42)");
+      hg.addColorStop(0.22, pal.grid + "33");
       hg.addColorStop(1, "transparent");
       ctx.fillStyle = hg;
       ctx.fillRect(0, 0, w, h * 0.5);
-      ctx.strokeStyle = pal.grid;
-      ctx.globalAlpha = 0.7;
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(0, h * 0.33);
-      ctx.lineTo(w, h * 0.33);
-      ctx.stroke();
-      ctx.globalAlpha = 1;
     }
 
     function drawRoad(pal) {
-      const a = project(-280, 0, 46);
-      const b = project(280, 0, 46);
-      const c = project(280, 0, 980);
-      const d = project(-280, 0, 980);
+      const a = project(-210, 0, 28);
+      const b = project(210, 0, 28);
+      const c = project(210, 0, 920);
+      const d = project(-210, 0, 920);
       if (!a || !b || !c || !d) return;
       ctx.beginPath();
       ctx.moveTo(a.x, a.y);
@@ -916,121 +974,228 @@
       ctx.lineTo(c.x, c.y);
       ctx.lineTo(d.x, d.y);
       ctx.closePath();
-      ctx.fillStyle = "rgba(0, 6, 12, 0.92)";
+      const asphalt = ctx.createLinearGradient(0, a.y, 0, Math.min(h, c.y + 80));
+      asphalt.addColorStop(0, "#2a3140");
+      asphalt.addColorStop(0.45, "#171b24");
+      asphalt.addColorStop(1, "#0e1016");
+      ctx.fillStyle = asphalt;
       ctx.fill();
-      ctx.strokeStyle = pal.grid;
-      ctx.globalAlpha = 0.35;
-      ctx.lineWidth = 2;
-      ctx.stroke();
-      ctx.globalAlpha = 1;
-      const dash = 36;
-      const off = world.scroll % (dash * 2);
-      for (let z = 52 + (dash * 2 - off); z < 720; z += dash * 2) {
-        const p0 = project(0, 0.4, z);
-        const p1 = project(0, 0.4, z + dash * 0.7);
-        if (!p0 || !p1) continue;
-        ctx.globalAlpha = 0.55 * (1 - z / 820);
-        ctx.strokeStyle = pal.hot;
-        ctx.lineWidth = Math.max(1.4, p0.s * 3.2);
+      const wet = ctx.createLinearGradient(w * 0.5, h * 0.36, w * 0.5, h);
+      wet.addColorStop(0, "rgba(180, 220, 255, 0.02)");
+      wet.addColorStop(0.55, "rgba(0, 232, 255, 0.05)");
+      wet.addColorStop(1, "rgba(255, 255, 255, 0.07)");
+      ctx.fillStyle = wet;
+      ctx.fill();
+      ctx.save();
+      ctx.globalCompositeOperation = "lighter";
+      [[-200, pal.grid], [200, pal.hot]].forEach(([x, col]) => {
+        const p0 = project(x, 0.4, 32);
+        const p1 = project(x, 0.4, 880);
+        if (!p0 || !p1) return;
+        ctx.strokeStyle = col;
+        ctx.globalAlpha = 0.55;
+        ctx.lineWidth = Math.max(2, p0.s * 2.4);
         ctx.beginPath();
         ctx.moveTo(p0.x, p0.y);
         ctx.lineTo(p1.x, p1.y);
         ctx.stroke();
-      }
-      ctx.globalAlpha = 1;
-    }
-
-    function drawGrid(pal) {
-      const step = 70;
-      const off = world.scroll % step;
-      ctx.save();
-      ctx.strokeStyle = pal.grid;
-      ctx.lineWidth = 1.4;
-
-      for (let x = -900; x <= 900; x += step) {
-        const a = project(x, 0, 48);
-        const b = project(x, 0, 980);
-        if (!a || !b) continue;
-        const lane = LANES.includes(x) || x === 0;
-        ctx.globalAlpha = lane ? 0.9 : 0.22;
-        ctx.lineWidth = lane ? 2.2 : 1.1;
-        ctx.beginPath();
-        ctx.moveTo(a.x, a.y);
-        ctx.lineTo(b.x, b.y);
-        ctx.stroke();
-      }
-
-      for (let z = 48 + (step - off); z < 980; z += step) {
-        const L = project(-900, 0, z);
-        const R = project(900, 0, z);
-        if (!L || !R) continue;
-        ctx.lineWidth = 1.15;
-        ctx.globalAlpha = 0.16 + 0.5 * (1 - z / 980);
-        ctx.beginPath();
-        ctx.moveTo(L.x, L.y);
-        ctx.lineTo(R.x, R.y);
-        ctx.stroke();
-      }
+      });
       ctx.restore();
-      ctx.globalAlpha = 1;
-    }
-
-    function drawSpeedLines(pal, pace) {
-      const cx = w * 0.5;
-      const cy = h * 0.33;
-      ctx.save();
-      ctx.globalCompositeOperation = "lighter";
-      ctx.lineCap = "round";
-      const n = 34;
-      for (let i = 0; i < n; i++) {
-        const t = (world.time * (2.4 + world.turbo * 0.08) + i * 0.119) % 1;
-        const side = i % 2 === 0 ? -1 : 1;
-        const lane = 0.1 + ((i * 0.09) % 0.86);
-        const xDir = side * (0.08 + lane);
-        const yDir = 0.48 + (i % 6) * 0.08;
-        const t2 = Math.min(1, t + 0.14 + pace * 0.01);
-        const x0 = cx + xDir * w * (0.04 + t * 0.7);
-        const y0 = cy + yDir * h * (0.02 + t * 0.78);
-        const x1 = cx + xDir * w * (0.04 + t2 * 0.92);
-        const y1 = cy + yDir * h * (0.02 + t2 * 0.96);
-        ctx.strokeStyle = i % 3 === 0 ? pal.hot : pal.grid;
-        ctx.globalAlpha = (0.12 + 0.28 * (1 - t)) * Math.min(1.3, 0.55 + pace * 0.09);
-        ctx.lineWidth = 1.2 + (1 - t) * 3.1;
-        ctx.beginPath();
-        ctx.moveTo(x0, y0);
-        ctx.lineTo(x1, y1);
-        ctx.stroke();
+      const dash = 26;
+      const off = world.scroll % (dash * 2);
+      ctx.lineCap = "butt";
+      for (let z = 34 + (dash * 2 - off); z < 760; z += dash * 2) {
+        const fade = Math.max(0.2, 1 - z / 860);
+        const p0 = project(-2.2, 0.6, z);
+        const p1 = project(-2.2, 0.6, z + dash * 0.55);
+        const q0 = project(2.2, 0.6, z);
+        const q1 = project(2.2, 0.6, z + dash * 0.55);
+        if (p0 && p1) {
+          ctx.globalAlpha = 0.95 * fade;
+          ctx.strokeStyle = "#ffe56a";
+          ctx.lineWidth = Math.max(3, p0.s * 4.2);
+          ctx.beginPath();
+          ctx.moveTo(p0.x, p0.y);
+          ctx.lineTo(p1.x, p1.y);
+          ctx.stroke();
+        }
+        if (q0 && q1) {
+          ctx.globalAlpha = 0.95 * fade;
+          ctx.strokeStyle = "#ffe56a";
+          ctx.lineWidth = Math.max(3, q0.s * 4.2);
+          ctx.beginPath();
+          ctx.moveTo(q0.x, q0.y);
+          ctx.lineTo(q1.x, q1.y);
+          ctx.stroke();
+        }
+        [-58, 58].forEach((x) => {
+          const a0 = project(x, 0.6, z);
+          const a1 = project(x, 0.6, z + dash * 0.7);
+          if (!a0 || !a1) return;
+          ctx.globalAlpha = 0.8 * fade;
+          ctx.strokeStyle = "#f4f7ff";
+          ctx.lineWidth = Math.max(2.2, a0.s * 3.2);
+          ctx.beginPath();
+          ctx.moveTo(a0.x, a0.y);
+          ctx.lineTo(a1.x, a1.y);
+          ctx.stroke();
+        });
       }
-      ctx.restore();
       ctx.globalAlpha = 1;
     }
 
     function drawCity(pal) {
-      ctx.save();
-      for (let i = 0; i < 20; i++) {
-        const span = 20 * 160;
-        const z = ((i * 160) - world.scroll * 0.35 % span + span) % span + 180;
+      const span = 2160;
+      for (let i = 0; i < 22; i++) {
+        const z = ((i * 98) - (world.scroll * 0.85) % span + span) % span + 120;
         const side = i % 2 === 0 ? -1 : 1;
-        const x = side * (300 + (i * 53) % 480);
-        const height = 90 + (i * 41) % 240;
-        const width = 28 + (i * 13) % 40;
+        const x = side * (168 + (i * 29) % 70);
+        const bw = 24 + (i * 13) % 38;
+        const bh = 80 + (i * 53) % 230;
         const b0 = project(x, 0, z);
-        const b1 = project(x + width * side, 0, z);
-        const t0 = project(x, height, z);
-        const t1 = project(x + width * side, height, z);
+        const b1 = project(x + bw * side, 0, z);
+        const t0 = project(x, bh, z);
+        const t1 = project(x + bw * side, bh, z);
         if (!b0 || !t0 || !b1 || !t1) continue;
-        ctx.globalAlpha = Math.max(0.12, 1 - z / 1100);
-        ctx.strokeStyle = pal.grid;
-        ctx.lineWidth = 1.3;
+        const fade = Math.max(0.12, 1 - z / 980);
+        ctx.globalAlpha = fade;
+        ctx.fillStyle = i % 3 === 0 ? "#10141c" : "#0b0e16";
         ctx.beginPath();
         ctx.moveTo(b0.x, b0.y);
         ctx.lineTo(t0.x, t0.y);
         ctx.lineTo(t1.x, t1.y);
         ctx.lineTo(b1.x, b1.y);
+        ctx.closePath();
+        ctx.fill();
+        const rows = 5 + (i % 6);
+        const cols = 3 + (i % 3);
+        for (let r = 0; r < rows; r++) {
+          for (let c = 0; c < cols; c++) {
+            if ((r + c + i) % 5 === 0) continue;
+            const wx = x + side * bw * ((c + 0.25) / cols);
+            const wy = bh * (1 - (r + 0.25) / rows);
+            const pt = project(wx, wy, z);
+            if (!pt) continue;
+            ctx.globalAlpha = fade * 0.62;
+            ctx.fillStyle = (r + i) % 7 === 0 ? pal.hot : (i % 2 ? "#ffe3a0" : "#cfe4ff");
+            ctx.fillRect(pt.x, pt.y, Math.max(1.1, 2.1 * pt.s), Math.max(1.4, 2.8 * pt.s));
+          }
+        }
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    function drawLamps() {
+      const span = 720;
+      ctx.save();
+      ctx.globalCompositeOperation = "lighter";
+      for (let i = 0; i < 10; i++) {
+        const z = ((i * 72) - world.scroll % span + span) % span + 50;
+        const side = i % 2 === 0 ? -1 : 1;
+        const x = side * 138;
+        const base = project(x, 0, z);
+        const top = project(x, 34, z);
+        const pool = project(x * 0.82, 0.2, z + 8);
+        if (!base || !top) continue;
+        const fade = Math.max(0, 1 - z / 620);
+        ctx.globalAlpha = 0.35 * fade;
+        ctx.strokeStyle = "#9aa3b2";
+        ctx.lineWidth = Math.max(1, 1.6 * (base.s || 1));
+        ctx.beginPath();
+        ctx.moveTo(base.x, base.y);
+        ctx.lineTo(top.x, top.y);
         ctx.stroke();
-        ctx.fillStyle = pal.hot;
-        ctx.globalAlpha *= 0.45;
-        ctx.fillRect(t0.x - 2, t0.y - 2, 4, 4);
+        if (pool) {
+          const glow = ctx.createRadialGradient(pool.x, pool.y, 2, pool.x, pool.y, 38 * pool.s);
+          glow.addColorStop(0, "rgba(255, 186, 92, 0.28)");
+          glow.addColorStop(1, "transparent");
+          ctx.fillStyle = glow;
+          ctx.beginPath();
+          ctx.ellipse(pool.x, pool.y, 22 * pool.s, 8 * pool.s, 0, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.fillStyle = "#ffb45a";
+        ctx.globalAlpha = 0.55 * fade;
+        ctx.beginPath();
+        ctx.arc(top.x, top.y, Math.max(1.4, 2.4 * top.s), 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+      ctx.globalAlpha = 1;
+    }
+
+    function drawTrail(trail, color, height) {
+      if (!trail || trail.length < 2) return;
+      ctx.save();
+      ctx.lineJoin = "round";
+      ctx.lineCap = "round";
+      for (let i = 0; i < trail.length - 1; i++) {
+        const a = trail[i];
+        const b = trail[i + 1];
+        if (a.z < 18 || b.z < 18) continue;
+        const fade = 1 - i / (trail.length - 1);
+        const ht = height * (0.55 + 0.7 * fade);
+        const half = 4.2;
+        const g0 = project(a.x, 0, a.z);
+        const g1 = project(b.x, 0, b.z);
+        const t0 = project(a.x, ht, a.z);
+        const t1 = project(b.x, ht, b.z);
+        const l0 = project(a.x - half, 0, a.z);
+        const r0 = project(a.x + half, 0, a.z);
+        const l1 = project(b.x - half, 0, b.z);
+        const r1 = project(b.x + half, 0, b.z);
+        if (!g0 || !g1 || !t0 || !t1 || !l0 || !r0 || !l1 || !r1) continue;
+        ctx.fillStyle = color;
+        ctx.globalAlpha = 0.22 * fade;
+        ctx.beginPath();
+        ctx.moveTo(l0.x, l0.y);
+        ctx.lineTo(r0.x, r0.y);
+        ctx.lineTo(r1.x, r1.y);
+        ctx.lineTo(l1.x, l1.y);
+        ctx.closePath();
+        ctx.fill();
+        ctx.globalAlpha = 0.32 + 0.55 * fade;
+        ctx.beginPath();
+        ctx.moveTo(g0.x, g0.y);
+        ctx.lineTo(t0.x, t0.y);
+        ctx.lineTo(t1.x, t1.y);
+        ctx.lineTo(g1.x, g1.y);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = "#fff";
+        ctx.globalAlpha = 0.5 * fade;
+        ctx.lineWidth = Math.max(1.4, (g0.s + g1.s) * 1.6);
+        ctx.beginPath();
+        ctx.moveTo(t0.x, t0.y);
+        ctx.lineTo(t1.x, t1.y);
+        ctx.stroke();
+        ctx.strokeStyle = color;
+        ctx.globalAlpha = 0.85 * fade;
+        ctx.lineWidth = Math.max(2.4, (g0.s + g1.s) * 3.4);
+        ctx.beginPath();
+        ctx.moveTo(t0.x, t0.y);
+        ctx.lineTo(t1.x, t1.y);
+        ctx.stroke();
+      }
+      ctx.restore();
+      ctx.globalAlpha = 1;
+    }
+
+    function drawMotion(pace) {
+      ctx.save();
+      ctx.globalCompositeOperation = "lighter";
+      for (let i = 0; i < 12; i++) {
+        const t = (world.time * 3.1 + i * 0.19) % 1;
+        const side = i % 2 ? 1 : -1;
+        const y = h * (0.58 + t * 0.44);
+        const x0 = w * 0.5 + side * w * (0.32 + t * 0.26);
+        ctx.strokeStyle = i % 3 === 0 ? "#fff" : "#8be7ff";
+        ctx.globalAlpha = (1 - t) * 0.16 * Math.min(1, pace / 7);
+        ctx.lineWidth = 1 + t * 2;
+        ctx.beginPath();
+        ctx.moveTo(x0, y);
+        ctx.lineTo(x0 + side * (50 + t * 110), y + 10);
+        ctx.stroke();
       }
       ctx.restore();
       ctx.globalAlpha = 1;
@@ -1038,27 +1203,26 @@
 
     function updateBikes(dt, pal) {
       bikes.sort((a, b) => b.z - a.z);
-      bikes.forEach((b, i) => {
+      bikes.forEach((b) => {
         b.laneTimer -= dt;
         if (b.laneTimer <= 0) {
           const next = LANES[Math.floor(Math.random() * LANES.length)];
-          b.targetX = next === b.targetX ? LANES[(LANES.indexOf(next) + 2) % LANES.length] : next;
-          b.laneTimer = 1.8 + Math.random() * 2.6;
+          b.targetX = next === b.targetX ? LANES[(LANES.indexOf(next) + 1) % LANES.length] : next;
+          b.laneTimer = 0.7 + Math.random() * 1.6;
         }
         const dx = b.targetX - b.x;
-        b.x += dx * Math.min(1, 2.4 * dt);
-        b.lean += (dx * 0.055 - b.lean) * Math.min(1, 7 * dt);
-        b.z += (b.vz + Math.sin(world.time * 1.35 + b.phase) * 0.22) * dt * 72;
-        if (b.z < 124) {
-          b.z = 126;
-          b.vz = Math.abs(b.vz) + 0.35;
-        } else if (b.z > 420) {
-          b.z = 410;
-          b.vz = -Math.abs(b.vz) - 0.22;
+        b.x += dx * Math.min(1, 3.1 * dt);
+        b.lean += (dx * 0.09 - b.lean) * Math.min(1, 8 * dt);
+        b.z += (b.vz + Math.sin(world.time * 1.5 + b.phase) * 0.28) * dt * 78;
+        if (b.z < 86) {
+          b.z = 88;
+          b.vz = Math.abs(b.vz) + 0.4;
+        } else if (b.z > 320) {
+          b.z = 300;
+          b.vz = -Math.abs(b.vz) - 0.25;
         }
         b.color = b.kind === "orange" ? pal.hot : pal.grid;
-        const trail = Math.max(54, b.z - 90 - world.turbo * 4);
-        drawLightWall(b.x, b.z, trail, b.color, 12);
+        drawGlow(b.x, b.z, b.color);
         drawLightCycle(b.x, b.z, b.color, { lean: b.lean, kind: b.kind });
       });
     }
@@ -1092,240 +1256,86 @@
       ctx.stroke();
     }
 
-    function drawLightWall(x, zFrom, zTo, color, height) {
-      const steps = 4;
-      for (let i = 0; i < steps; i++) {
-        const u0 = i / steps;
-        const u1 = (i + 1) / steps;
-        const z0 = zFrom + (zTo - zFrom) * u0;
-        const z1 = zFrom + (zTo - zFrom) * u1;
-        const fade = 1 - u0;
-        const a0 = project(x - 1.2, 0, z0);
-        const a1 = project(x - 1.2, height * fade, z0);
-        const b1 = project(x + 1.2, height * fade, z1);
-        const b0 = project(x + 1.2, 0, z1);
-        if (!a0 || !a1 || !b0 || !b1) continue;
-        ctx.globalAlpha = 0.1 + 0.22 * fade;
-        ctx.fillStyle = color;
-        ctx.beginPath();
-        ctx.moveTo(a0.x, a0.y);
-        ctx.lineTo(a1.x, a1.y);
-        ctx.lineTo(b1.x, b1.y);
-        ctx.lineTo(b0.x, b0.y);
-        ctx.closePath();
-        ctx.fill();
-        ctx.globalAlpha = 0.45 * fade;
-        ctx.strokeStyle = color;
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(a1.x, a1.y);
-        ctx.lineTo(b1.x, b1.y);
-        ctx.stroke();
-        ctx.shadowBlur = 0;
-      }
-      ctx.globalAlpha = 1;
-    }
-
-    function drawWheel(p, s, color, spin, player) {
-      if (!p) return;
-      const rx = Math.max(2.8, 5 * s * (player ? 1.25 : 1.05));
-      const ry = Math.max(7, 14 * s * (player ? 1.3 : 1.15));
-      ctx.save();
-      ctx.translate(p.x, p.y);
-      ctx.shadowColor = color;
-      ctx.shadowBlur = player ? 22 : 12;
-      ctx.strokeStyle = color;
-      ctx.fillStyle = "#02080d";
-      ctx.lineWidth = Math.max(1.6, s * 2.1);
-      ctx.beginPath();
-      ctx.ellipse(0, 0, rx, ry, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.ellipse(0, 0, rx * 0.32, ry * 0.32, 0, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.globalAlpha = 0.85;
-      ctx.lineWidth = Math.max(1, s * 1.1);
-      for (let i = 0; i < 6; i++) {
-        const a = spin + (i * Math.PI) / 3;
-        ctx.beginPath();
-        ctx.moveTo(Math.cos(a) * rx * 0.2, Math.sin(a) * ry * 0.2);
-        ctx.lineTo(Math.cos(a) * rx * 0.88, Math.sin(a) * ry * 0.88);
-        ctx.stroke();
-      }
-      ctx.restore();
-    }
-
     function loadImg(src) {
       const img = new Image();
+      img.onload = () => { img.keyed = keyBlack(img); };
       img.src = src;
       return img;
     }
 
+    function keyBlack(img) {
+      const c = document.createElement("canvas");
+      c.width = img.naturalWidth;
+      c.height = img.naturalHeight;
+      const x = c.getContext("2d");
+      x.drawImage(img, 0, 0);
+      const data = x.getImageData(0, 0, c.width, c.height);
+      const d = data.data;
+      for (let i = 0; i < d.length; i += 4) {
+        const max = Math.max(d[i], d[i + 1], d[i + 2]);
+        if (max < 14) d[i + 3] = 0;
+      }
+      x.putImageData(data, 0, 0);
+      return c;
+    }
+
     function spriteReady(img) {
-      return !!(img && img.complete && img.naturalWidth > 0);
+      return !!(img && img.keyed);
+    }
+
+    function drawGlow(x, z, color) {
+      const p = project(x, 0.4, z);
+      if (!p) return;
+      ctx.save();
+      ctx.globalCompositeOperation = "lighter";
+      const g = ctx.createRadialGradient(p.x, p.y, 2, p.x, p.y, 26 * p.s);
+      g.addColorStop(0, "rgba(255,255,255,0.85)");
+      g.addColorStop(0.18, color);
+      g.addColorStop(1, "transparent");
+      ctx.fillStyle = g;
+      ctx.globalAlpha = 0.9;
+      ctx.beginPath();
+      ctx.ellipse(p.x, p.y, 16 * p.s, 6 * p.s, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
     }
 
     function drawSpriteBike(x, z, img, player, lean) {
-      const p = project(x, 7, z);
+      const p = project(x, 3.2, z);
       if (!p || !spriteReady(img)) return false;
-      const hgt = p.s * (player ? 40 : 44);
-      const wid = hgt * (img.width / img.height);
-      const ghosts = player ? 3 : 2;
+      const src = img.keyed;
+      const hgt = p.s * (player ? 34 : 28);
+      const wid = hgt * (src.width / src.height);
       ctx.save();
       ctx.translate(p.x, p.y);
-      ctx.rotate((lean || 0) * 0.012);
-      ctx.globalCompositeOperation = "screen";
-      for (let i = ghosts; i >= 0; i--) {
-        const k = 1 - i * 0.05;
-        ctx.globalAlpha = i === 0 ? 1 : 0.16;
-        ctx.drawImage(img, -wid * 0.5 * k, -hgt * 0.84 * k - i * (5 + world.turbo * 0.4), wid * k, hgt * k);
-      }
+      ctx.rotate((lean || 0) * 0.018);
+      ctx.drawImage(src, -wid * 0.5, -hgt * 0.92, wid, hgt);
       ctx.restore();
       return true;
     }
+
     function drawLightCycle(x, zRear, color, opts) {
       const player = !!(opts && opts.player);
       const lean = (opts && opts.lean) || 0;
       const kind = (opts && opts.kind) || (player ? "cyan" : "orange");
       const img = kind === "orange" ? sprites.orange : sprites.cyan;
       if (drawSpriteBike(x, zRear, img, player, lean)) return;
-
-      const len = player ? 96 : 78;
-      const zF = zRear + len;
-      const zC = zRear + len * 0.34;
-      const zB = zRear + len * 0.58;
-      const rear = project(x, 12, zRear);
-      if (!rear) return;
-      const s = rear.s;
-      const L = (dx, y, z) => project(x + dx + lean * (y / 36), y, z);
-
+      const p = project(x, 8, zRear);
+      if (!p) return;
       ctx.save();
-      ctx.lineJoin = "round";
-      ctx.lineCap = "round";
-      ctx.shadowColor = color;
-      ctx.shadowBlur = player ? 10 : 4;
-      ctx.strokeStyle = color;
-
-      const bellyL = L(-11, 2.5, zRear + 10);
-      const bellyR = L(11, 2.5, zRear + 10);
-      const bellyFL = L(-4.5, 2.2, zF - 12);
-      const bellyFR = L(4.5, 2.2, zF - 12);
-      quad(bellyL, bellyR, bellyFR, bellyFL, "#050b12", color, Math.max(1.2, s * 1.4));
-
-      const deckL = L(-10, 15, zRear + 12);
-      const deckR = L(10, 15, zRear + 12);
-      const tankL = L(-7, 20, zC);
-      const tankR = L(7, 20, zC);
-      const deckFL = L(-3.4, 13, zF - 16);
-      const deckFR = L(3.4, 13, zF - 16);
-      quad(deckL, tankL, tankR, deckR, "#0b1c28", color, Math.max(1.3, s * 1.6));
-      quad(tankL, tankR, deckFR, deckFL, "#0b1c28", color, Math.max(1.2, s * 1.5));
-
-      const stripeL0 = L(-12, 5, zRear + 8);
-      const stripeL1 = L(-9, 18, zC);
-      const stripeL2 = L(-4.5, 13, zF - 18);
-      const stripeL3 = L(-8, 4, zRear + 26);
-      quad(stripeL0, stripeL1, stripeL2, stripeL3, color, "#041016", Math.max(1, s));
-
-      const stripeR0 = L(12, 5, zRear + 8);
-      const stripeR1 = L(9, 18, zC);
-      const stripeR2 = L(4.5, 13, zF - 18);
-      const stripeR3 = L(8, 4, zRear + 26);
-      quad(stripeR0, stripeR1, stripeR2, stripeR3, color, "#041016", Math.max(1, s));
-
-      const forkL = L(-4.5, 16, zB);
-      const forkR = L(4.5, 16, zB);
-      const axleL = L(-4, 10, zF);
-      const axleR = L(4, 10, zF);
-      lineTo(forkL, axleL, color, Math.max(2, s * 2.4));
-      lineTo(forkR, axleR, color, Math.max(2, s * 2.4));
-      lineTo(L(-8, 14, zRear + 14), forkL, color, Math.max(1.6, s * 1.8));
-      lineTo(L(8, 14, zRear + 14), forkR, color, Math.max(1.6, s * 1.8));
-
-      const front = L(0, 10, zF);
-      drawWheel(front, front ? front.s * 1.15 : s * 0.6, color, world.scroll * 0.09, player);
-
-      const glassL = L(-7.5, 22, zC);
-      const glassR = L(7.5, 22, zC);
-      const glassN = L(0, 18, zB + 4);
-      const glassB = L(0, 28, zC - 4);
-      ctx.globalAlpha = 0.22;
-      quad(glassL, glassR, glassN, glassB, color, color, 1.3);
-      ctx.globalAlpha = 1;
-      drawRider(x, zC, color, lean);
-
-      const pulse = 0.55 + 0.45 * Math.sin(world.scroll * 0.08);
-      [L(-10, 8, zRear - 4), L(10, 8, zRear - 4)].forEach((jet) => {
-        if (!jet) return;
-        ctx.globalAlpha = 0.4 + 0.45 * pulse;
-        ctx.fillStyle = "#fff";
-        ctx.shadowColor = color;
-        ctx.shadowBlur = 22;
-        ctx.beginPath();
-        ctx.ellipse(jet.x, jet.y, 3.8 * s, 7 * s, 0, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = color;
-        ctx.beginPath();
-        ctx.ellipse(jet.x, jet.y, 6.5 * s, 12 * s, 0, 0, Math.PI * 2);
-        ctx.fill();
-      });
-      ctx.globalAlpha = 1;
-
-      const rearWheel = L(0, 11, zRear + 3);
-      drawWheel(rearWheel, s * (player ? 1.35 : 1.15), color, world.scroll * 0.1, player);
+      ctx.translate(p.x, p.y);
+      ctx.fillStyle = color;
+      ctx.globalAlpha = 0.9;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 7 * p.s, 11 * p.s, 0, 0, Math.PI * 2);
+      ctx.fill();
       ctx.restore();
     }
 
-    function drawRider(x, zC, color, lean) {
-      const helmet = project(x + lean, 38, zC + 2);
-      if (!helmet) return;
-      const s = Math.max(1.4, helmet.s);
-      const visor = project(x + lean * 1.2, 37, zC + 8);
-      const chest = project(x + lean * 0.5, 27, zC + 8);
-      const hip = project(x, 17, zC - 2);
-      const shoulderL = project(x - 9 + lean, 28, zC + 3);
-      const shoulderR = project(x + 9 + lean, 28, zC + 3);
-      const handL = project(x - 9 + lean, 20, zC + 24);
-      const handR = project(x + 9 + lean, 20, zC + 24);
-      const kneeL = project(x - 9, 10, zC + 7);
-      const kneeR = project(x + 9, 10, zC + 7);
-      const bootL = project(x - 7, 5, zC + 16);
-      const bootR = project(x + 7, 5, zC + 16);
-      if (!hip) return;
-
-      ctx.shadowBlur = 12;
-      ctx.strokeStyle = color;
-      lineTo(hip, kneeL, color, Math.max(3, s * 2.4));
-      lineTo(hip, kneeR, color, Math.max(3, s * 2.4));
-      lineTo(kneeL, bootL, color, Math.max(3, s * 2.2));
-      lineTo(kneeR, bootR, color, Math.max(3, s * 2.2));
-      lineTo(shoulderL, handL, color, Math.max(3, s * 2.2));
-      lineTo(shoulderR, handR, color, Math.max(3, s * 2.2));
-      quad(shoulderL, shoulderR, chest, hip, "#0a1218", color, Math.max(1.6, s * 1.4));
-
-      ctx.fillStyle = "#101820";
-      ctx.strokeStyle = color;
-      ctx.lineWidth = Math.max(2, s * 1.6);
-      ctx.beginPath();
-      ctx.ellipse(helmet.x, helmet.y, 5.6 * s, 6.4 * s, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
-      if (visor) {
-        ctx.fillStyle = color;
-        ctx.globalAlpha = 0.7;
-        ctx.beginPath();
-        ctx.ellipse(visor.x, visor.y, 4.2 * s, 2.6 * s, 0, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.globalAlpha = 1;
-      }
-    }
-
     function drawPlayer(pal) {
-      const lean = world.steer * 0.035 + Math.sin(world.time * 3.1) * 1.15;
-      drawLightWall(-7, 98, 78, pal.grid, 10);
-      drawLightWall(7, 98, 78, pal.grid, 10);
-      drawLightCycle(0, 96, pal.grid, { player: true, lean, kind: "cyan" });
+      const lean = world.steer * 0.12 + Math.sin(world.time * 3.4) * 1.4;
+      drawGlow(0, world.playerZ, pal.grid);
+      drawLightCycle(0, world.playerZ, pal.grid, { player: true, lean, kind: "cyan" });
     }
 
     function updateDiscs(dt, pal) {
@@ -1376,10 +1386,11 @@
       const bike = bikes.find((b) => Math.hypot(b.x - d.tx, b.z - d.tz) < 40);
       if (bike) {
         voxelBurst(bike.x, 12, bike.z, bike.color);
-        bike.z = 360 + Math.random() * 80;
+        bike.z = 200 + Math.random() * 40;
         bike.x = LANES[Math.floor(Math.random() * LANES.length)];
         bike.targetX = bike.x;
         bike.vz = 0.3 + Math.random() * 0.7;
+        bike.trail = [];
       } else {
         voxelBurst(d.tx, 24, d.tz, pal.hot);
       }
