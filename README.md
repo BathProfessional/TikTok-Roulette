@@ -1,23 +1,17 @@
-﻿# TikTok Roulette
+﻿# LIGHTGRID
 
-A single-file gift roulette overlay for [TikFinity](https://tikfinity.zerody.one/). It connects to the local Event API, spins on completed gifts, and is ready for OBS / TikTok LIVE Studio as a browser source.
+A Tron-inspired light-cycle overlay for [TikFinity](https://tikfinity.zerody.one/). Viewers beat **sectors** by sending TikTok gifts. Gifts throw identity discs that derez enemy cycles, fill sector energy, and smash open the next grid.
 
 ## Setup
 
-1. Install and open **TikFinity Desktop**, then connect it to your TikTok LIVE.
-2. Leave the Event API on the default endpoint: `ws://localhost:21213/`.
-3. Open `index.html` in a browser to preview. Hover the bottom-right corner for settings. Press **D** for a demo gift or **C** for a demo combo.
-4. In **OBS** (or TikTok LIVE Studio), add a **Browser Source**:
-   - Local file: `index.html` in this folder
-   - Width `1920`, height `1080`
-   - Enable **Transparent** / shutdown source when not visible as you prefer
-5. Optional OBS URL params:
-   - `index.html?clean=1` hides the settings panel
-   - `index.html?preview=1` uses a dark background for testing
-   - `index.html?min=10&goal=20000` sets the spin threshold and diamond goal
+1. Open **TikFinity Desktop** and connect it to your TikTok LIVE (`ws://localhost:21213/`).
+2. Preview `index.html`. Press **D** for a demo gift, **C** for a combo.
+3. OBS / TikTok LIVE Studio **Browser Source**:
+   - Local file: `index.html`
+   - Size `1920×1080`
+   - Use the default black void as its own scene, or `index.html?overlay=1` for a transparent background
+4. Flags: `?clean=1` hides settings, `?min=10&need=500` sets the gift threshold and Sector 1 energy.
 
-## Gift combos
+## Gifts
 
-Streakable gifts (`giftType: 1`) only trigger a full wheel spin when `repeatEnd` is `true`. While a combo is still going, the overlay shows a live combo chip with `repeatCount` and does not spin yet.
-
-Gifts below the **Min diamonds to spin** value still add to the goal bar, but they skip the wheel.
+Streakable gifts only fire a disc when `repeatEnd` is true. During the streak the cycle goes **TURBO** and the combo counter ticks. Fill a sector’s energy bar to clear it; each sector needs more diamonds than the last.

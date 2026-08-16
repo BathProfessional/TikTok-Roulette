@@ -3,25 +3,17 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TikTok Roulette</title>
+  <title>LIGHTGRID</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --bg: transparent;
-      --ink: #f7f8ff;
-      --muted: rgba(247, 248, 255, 0.62);
-      --panel: rgba(7, 8, 16, 0.78);
-      --panel-strong: rgba(7, 8, 16, 0.92);
-      --stroke: rgba(255, 255, 255, 0.12);
-      --gold: #ffd76a;
-      --cyan: #3dffef;
-      --pink: #ff2e63;
-      --green: #3dff8a;
-      --red: #ff4d6d;
-      --shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
-      --wheel: 540px;
+      --cyan: #00e8ff;
+      --orange: #ff6a00;
+      --ink: #e9fbff;
+      --muted: rgba(180, 240, 255, 0.55);
+      --panel: rgba(0, 10, 18, 0.72);
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -30,348 +22,293 @@
       width: 100%;
       height: 100%;
       overflow: hidden;
-      background: var(--bg);
+      background: #000;
       color: var(--ink);
-      font-family: Outfit, "Segoe UI", sans-serif;
+      font-family: Rajdhani, "Segoe UI", sans-serif;
       user-select: none;
     }
 
-    body.preview {
-      background:
-        radial-gradient(1200px 700px at 50% 20%, rgba(255, 46, 99, 0.18), transparent 55%),
-        radial-gradient(900px 600px at 80% 90%, rgba(61, 255, 239, 0.12), transparent 50%),
-        #07080f;
+    body.overlay { background: transparent; }
+
+    canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
     }
 
-    .hud {
+    .scan {
       position: absolute;
-      inset: 28px 36px auto 36px;
-      display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 18px;
-      align-items: stretch;
-      z-index: 5;
+      inset: 0;
+      pointer-events: none;
+      z-index: 6;
+      background:
+        repeating-linear-gradient(to bottom, transparent 0 2px, rgba(0, 0, 0, 0.09) 3px),
+        radial-gradient(ellipse at center, transparent 48%, rgba(0, 0, 0, 0.55) 100%);
+    }
+
+    .hud, .side, .banner, .combo, .cleared, .settings, .pilot {
+      position: absolute;
+      z-index: 8;
+      background: var(--panel);
+      border: 1px solid rgba(0, 232, 255, 0.45);
+      box-shadow: 0 0 18px rgba(0, 232, 255, 0.12), inset 0 0 18px rgba(0, 232, 255, 0.05);
+      clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px);
+      backdrop-filter: blur(10px);
       pointer-events: none;
     }
 
-    .goal, .status, .card, .settings, .combo {
-      background: var(--panel);
-      border: 1px solid var(--stroke);
-      box-shadow: var(--shadow);
-      backdrop-filter: blur(16px);
+    .hud {
+      top: 22px;
+      left: 24px;
+      right: 24px;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 18px;
+      align-items: center;
+      padding: 12px 18px;
     }
 
-    .goal {
-      border-radius: 18px;
-      padding: 14px 18px 16px;
+    .logo {
+      font-family: Orbitron, sans-serif;
+      font-weight: 900;
+      letter-spacing: 0.28em;
+      font-size: 18px;
+      color: var(--cyan);
+      text-shadow: 0 0 12px var(--cyan);
+    }
+
+    .sector {
+      font-family: Orbitron, sans-serif;
+      font-size: 13px;
+      letter-spacing: 0.18em;
+      color: var(--muted);
+    }
+
+    .energy {
       min-width: 0;
     }
 
-    .goal-top {
+    .energy-top {
       display: flex;
       justify-content: space-between;
-      align-items: baseline;
-      gap: 12px;
-      margin-bottom: 10px;
-    }
-
-    .kicker {
-      font-size: 12px;
-      letter-spacing: 0.22em;
-      text-transform: uppercase;
-      color: var(--muted);
+      font-size: 13px;
       font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      margin-bottom: 6px;
     }
 
-    .goal-count {
-      font-weight: 800;
-      font-size: 18px;
-      color: var(--gold);
-      white-space: nowrap;
-    }
+    .need { color: var(--cyan); }
 
     .track {
-      height: 14px;
-      border-radius: 999px;
-      background: rgba(255, 255, 255, 0.08);
-      overflow: hidden;
+      height: 12px;
+      background: rgba(0, 232, 255, 0.08);
+      border: 1px solid rgba(0, 232, 255, 0.35);
       position: relative;
+      overflow: hidden;
     }
 
     .fill {
       height: 100%;
       width: 0%;
-      border-radius: inherit;
-      background: linear-gradient(90deg, var(--pink), var(--gold) 55%, var(--cyan));
-      box-shadow: 0 0 18px rgba(255, 215, 106, 0.45);
-      transition: width 0.7s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-
-    .fill.complete {
-      animation: glowPulse 1.4s ease-in-out infinite;
+      background: linear-gradient(90deg, #007c88, var(--cyan) 60%, #fff);
+      box-shadow: 0 0 16px var(--cyan);
+      transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     .status {
-      pointer-events: none;
       display: flex;
       align-items: center;
-      gap: 10px;
-      border-radius: 999px;
-      padding: 0 18px;
-      min-width: 210px;
-      font-weight: 700;
-      letter-spacing: 0.08em;
+      gap: 8px;
+      font-family: Orbitron, sans-serif;
+      font-size: 11px;
+      letter-spacing: 0.16em;
       text-transform: uppercase;
-      font-size: 13px;
+      white-space: nowrap;
     }
 
     .dot {
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-      background: var(--red);
-      box-shadow: 0 0 12px var(--red);
-      transition: background 0.25s, box-shadow 0.25s;
+      width: 9px;
+      height: 9px;
+      background: #ff3355;
+      box-shadow: 0 0 10px #ff3355;
     }
 
     .status.on .dot {
-      background: var(--green);
-      box-shadow: 0 0 14px var(--green);
+      background: var(--cyan);
+      box-shadow: 0 0 12px var(--cyan);
     }
 
-    .stage {
-      position: absolute;
-      inset: 0;
-      display: grid;
-      place-items: center;
-      padding-top: 36px;
+    .side {
+      top: 110px;
+      left: 24px;
+      width: 230px;
+      padding: 12px 14px 14px;
     }
 
-    .wheel-wrap {
-      position: relative;
-      width: var(--wheel);
-      height: var(--wheel);
-      filter: drop-shadow(0 30px 40px rgba(0, 0, 0, 0.55));
+    .kicker {
+      font-family: Orbitron, sans-serif;
+      font-size: 10px;
+      letter-spacing: 0.22em;
+      color: var(--muted);
+      margin-bottom: 8px;
     }
 
-    .glow {
-      position: absolute;
-      inset: -70px;
-      background:
-        radial-gradient(circle at center, rgba(255, 46, 99, 0.22), transparent 42%),
-        radial-gradient(circle at center, rgba(61, 255, 239, 0.16), transparent 58%);
-      animation: aura 4.5s ease-in-out infinite;
-      pointer-events: none;
-    }
-
-    .pointer {
-      position: absolute;
-      top: -8px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 4;
-      width: 0;
-      height: 0;
-      border-left: 18px solid transparent;
-      border-right: 18px solid transparent;
-      border-top: 36px solid var(--gold);
-      filter: drop-shadow(0 6px 8px rgba(0, 0, 0, 0.55));
-    }
-
-    .pointer::after {
-      content: "";
-      position: absolute;
-      top: -36px;
-      left: -7px;
-      width: 14px;
-      height: 14px;
-      border-radius: 50%;
-      background: #fff7d6;
-      box-shadow: 0 0 16px var(--gold);
-    }
-
-    .wheel-rotator {
-      width: 100%;
-      height: 100%;
-      border-radius: 50%;
-      will-change: transform;
-    }
-
-    canvas {
-      width: 100%;
-      height: 100%;
-      border-radius: 50%;
-      display: block;
-    }
-
-    .hub {
-      position: absolute;
-      inset: 38%;
-      border-radius: 50%;
-      background:
-        radial-gradient(circle at 35% 30%, #fff, #ffe08a 28%, #c47a12 70%, #6a3a00);
-      border: 6px solid #1a1208;
-      box-shadow:
-        inset 0 8px 16px rgba(255, 255, 255, 0.35),
-        0 10px 24px rgba(0, 0, 0, 0.45);
-      display: grid;
-      place-items: center;
-      z-index: 3;
-      color: #2a1600;
-      font-family: "Bebas Neue", sans-serif;
-      font-size: 28px;
-      letter-spacing: 0.08em;
-      text-align: center;
-      line-height: 0.85;
-    }
-
-    .ring {
-      position: absolute;
-      inset: -10px;
-      border-radius: 50%;
-      border: 10px solid #120d18;
-      box-shadow:
-        0 0 0 6px rgba(255, 215, 106, 0.28),
-        inset 0 0 0 3px rgba(255, 255, 255, 0.08);
-      pointer-events: none;
-      z-index: 2;
-    }
-
-    .card {
-      position: absolute;
-      left: 50%;
-      bottom: 42px;
-      transform: translateX(-50%) translateY(16px);
-      width: min(720px, calc(100% - 72px));
-      border-radius: 22px;
-      padding: 18px 22px;
+    .row {
       display: flex;
-      gap: 16px;
-      align-items: center;
-      opacity: 0;
-      pointer-events: none;
-      z-index: 6;
-      transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 15px;
+      font-weight: 700;
     }
 
-    .card.show {
+    .row b { color: var(--cyan); font-weight: 700; }
+
+    .combo {
+      top: 38%;
+      right: 28px;
+      padding: 10px 16px 8px;
+      text-align: right;
+      opacity: 0;
+      transform: translateX(16px);
+      transition: 0.18s ease;
+    }
+
+    .combo.show { opacity: 1; transform: none; }
+
+    .combo strong {
+      display: block;
+      font-family: Orbitron, sans-serif;
+      font-size: 42px;
+      color: var(--orange);
+      text-shadow: 0 0 18px var(--orange);
+      line-height: 0.9;
+    }
+
+    .banner {
+      left: 50%;
+      bottom: 28px;
+      transform: translateX(-50%) translateY(18px);
+      width: min(720px, calc(100% - 48px));
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 12px 16px;
+      opacity: 0;
+      z-index: 9;
+    }
+
+    .banner.show {
       opacity: 1;
       transform: translateX(-50%) translateY(0);
+      transition: 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .pilot {
+      position: absolute;
+      right: 24px;
+      top: 110px;
+      width: 168px;
+      padding: 8px 8px 10px;
+      z-index: 8;
+      pointer-events: none;
+    }
+
+    .pilot img {
+      width: 100%;
+      display: block;
+      mix-blend-mode: screen;
+      margin-bottom: 6px;
     }
 
     .avatar {
-      width: 72px;
-      height: 72px;
-      border-radius: 18px;
+      width: 62px;
+      height: 62px;
       object-fit: cover;
-      background: #15151f;
-      border: 1px solid var(--stroke);
+      object-position: top center;
+      background: #031018;
+      border: 1px solid var(--cyan);
       flex: 0 0 auto;
+      mix-blend-mode: screen;
     }
 
-    .who {
-      font-size: 13px;
-      color: var(--muted);
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      font-weight: 700;
-    }
-
-    .name {
-      font-family: "Bebas Neue", sans-serif;
-      font-size: 38px;
-      letter-spacing: 0.03em;
-      line-height: 0.95;
-    }
-
-    .meta {
-      margin-top: 4px;
-      font-size: 18px;
-      font-weight: 700;
-    }
-
-    .gift {
-      color: var(--cyan);
-    }
-
-    .diamonds {
-      color: var(--gold);
-    }
-
-    .prize-chip {
+    .who { font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+    .name { font-family: Orbitron, sans-serif; font-size: 22px; letter-spacing: 0.06em; }
+    .meta { font-size: 16px; font-weight: 700; color: var(--cyan); }
+    .tag {
       margin-left: auto;
+      font-family: Orbitron, sans-serif;
+      color: var(--orange);
+      letter-spacing: 0.12em;
+      font-size: 14px;
       text-align: right;
-      flex: 0 0 auto;
+      text-shadow: 0 0 10px var(--orange);
     }
 
-    .prize-chip b {
-      display: block;
-      font-family: "Bebas Neue", sans-serif;
-      font-size: 34px;
-      color: var(--pink);
-      letter-spacing: 0.04em;
-    }
-
-    .combo {
-      position: absolute;
-      top: 118px;
+    .cleared {
       left: 50%;
-      transform: translateX(-50%) translateY(-8px);
-      border-radius: 999px;
-      padding: 10px 18px;
-      display: flex;
-      gap: 10px;
-      align-items: center;
+      top: 44%;
+      transform: translate(-50%, -50%) scale(0.86);
+      padding: 22px 40px;
+      text-align: center;
       opacity: 0;
-      z-index: 6;
-      font-weight: 700;
-      transition: opacity 0.25s ease, transform 0.25s ease;
+      pointer-events: none;
+      z-index: 12;
     }
 
-    .combo.show {
+    .cleared.show {
       opacity: 1;
-      transform: translateX(-50%) translateY(0);
+      transform: translate(-50%, -50%) scale(1);
+      transition: 0.35s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    .combo em {
-      font-style: normal;
-      color: var(--gold);
-      font-family: "Bebas Neue", sans-serif;
-      font-size: 28px;
-      letter-spacing: 0.04em;
+    .cleared h2 {
+      font-family: Orbitron, sans-serif;
+      font-size: clamp(28px, 5vw, 56px);
+      letter-spacing: 0.18em;
+      color: var(--cyan);
+      text-shadow: 0 0 24px var(--cyan);
+    }
+
+    .cleared p {
+      margin-top: 6px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-weight: 700;
     }
 
     .settings-wrap {
       position: absolute;
-      right: 24px;
-      bottom: 24px;
-      z-index: 8;
+      right: 18px;
+      bottom: 18px;
+      z-index: 20;
       pointer-events: auto;
     }
 
     .gear {
-      width: 44px;
-      height: 44px;
+      width: 42px;
+      height: 42px;
       margin-left: auto;
-      border-radius: 14px;
-      border: 1px solid var(--stroke);
-      background: var(--panel);
-      color: var(--ink);
       display: grid;
       place-items: center;
-      font-size: 20px;
-      box-shadow: var(--shadow);
+      border: 1px solid rgba(0, 232, 255, 0.45);
+      background: var(--panel);
+      color: var(--cyan);
+      cursor: pointer;
+      font-size: 18px;
     }
 
     .settings {
+      position: static;
       width: 320px;
-      border-radius: 20px;
-      padding: 16px;
-      margin-top: 10px;
+      padding: 14px;
+      margin-top: 8px;
       opacity: 0;
       pointer-events: none;
-      transform: translateY(12px);
-      transition: opacity 0.2s ease, transform 0.2s ease;
+      clip-path: none;
     }
 
     body.show-settings .settings,
@@ -379,315 +316,289 @@
     .settings-wrap:focus-within .settings {
       opacity: 1;
       pointer-events: auto;
-      transform: none;
     }
 
-    .settings h2 {
-      font-size: 13px;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-      margin-bottom: 12px;
-      color: var(--muted);
-    }
-
-    label {
-      display: block;
-      font-size: 12px;
-      color: var(--muted);
-      margin: 8px 0 4px;
-    }
-
-    input, textarea {
+    label { display: block; font-size: 12px; color: var(--muted); margin: 8px 0 4px; letter-spacing: 0.08em; text-transform: uppercase; }
+    input {
       width: 100%;
-      border: 1px solid var(--stroke);
-      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(0, 232, 255, 0.35);
+      background: rgba(0, 20, 28, 0.8);
       color: var(--ink);
-      border-radius: 10px;
       padding: 8px 10px;
-      font: inherit;
+      font: 700 14px Rajdhani, sans-serif;
       outline: none;
     }
-
-    textarea { min-height: 64px; resize: vertical; }
-
-    .row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-    }
-
-    .btns {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-      margin-top: 12px;
-    }
-
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
     button {
-      border: 0;
-      border-radius: 10px;
-      padding: 10px 12px;
-      font: 700 13px Outfit, sans-serif;
+      border: 1px solid var(--cyan);
+      background: var(--cyan);
+      color: #021018;
+      padding: 9px 10px;
+      font: 700 13px Orbitron, sans-serif;
+      letter-spacing: 0.06em;
       cursor: pointer;
-      color: #081016;
-      background: var(--gold);
     }
-
-    button.ghost {
-      background: rgba(255, 255, 255, 0.08);
-      color: var(--ink);
-    }
-
-    button.gear {
-      background: var(--panel);
-      color: var(--ink);
-      padding: 0;
-    }
-
-    .hint {
-      margin-top: 8px;
-      font-size: 11px;
-      color: var(--muted);
-      line-height: 1.4;
-    }
-
-    .fx {
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-      overflow: hidden;
-      z-index: 7;
-    }
-
-    .spark {
-      position: absolute;
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      animation: spark 0.9s ease-out forwards;
-    }
-
-    @keyframes aura {
-      0%, 100% { opacity: 0.55; transform: scale(0.96); }
-      50% { opacity: 1; transform: scale(1.04); }
-    }
-
-    @keyframes glowPulse {
-      0%, 100% { filter: brightness(1); }
-      50% { filter: brightness(1.35); }
-    }
-
-    @keyframes spark {
-      to { transform: translate(var(--tx), var(--ty)) scale(0.2); opacity: 0; }
-    }
-
-    @media (max-width: 1100px) {
-      :root { --wheel: 420px; }
-      .name { font-size: 30px; }
-    }
+    button.ghost { background: transparent; color: var(--cyan); }
+    button.gear { padding: 0; }
+    .hint { margin-top: 8px; font-size: 11px; color: var(--muted); line-height: 1.35; }
   </style>
 </head>
 <body>
+  <canvas id="view"></canvas>
+  <div class="scan"></div>
+
   <header class="hud">
-    <section class="goal" aria-label="Diamond goal">
-      <div class="goal-top">
-        <div class="kicker">Diamond goal</div>
-        <div class="goal-count" id="goalCount">0 / 10,000 💎</div>
-      </div>
-      <div class="track"><div class="fill" id="goalFill"></div></div>
-    </section>
-    <div class="status" id="status">
-      <span class="dot"></span>
-      <span id="statusText">Offline</span>
+    <div>
+      <div class="logo">LIGHTGRID</div>
+      <div class="sector" id="sectorLabel">SECTOR 01</div>
     </div>
+    <div class="energy">
+      <div class="energy-top">
+        <span>Sector energy</span>
+        <span class="need" id="needText">0 / 500</span>
+      </div>
+      <div class="track"><div class="fill" id="fill"></div></div>
+    </div>
+    <div class="status" id="status"><span class="dot"></span><span id="statusText">Offline</span></div>
   </header>
 
+  <aside class="side">
+    <div class="kicker">Top programs</div>
+    <div id="board"><div class="row"><span>Awaiting gifts</span><b></b></div></div>
+  </aside>
+
+  <aside class="pilot">
+    <img id="pilotImg" src="assets/rider-cyan.png" alt="Grid racer" />
+    <div class="kicker" id="pilotLabel">Your program</div>
+  </aside>
+
   <div class="combo" id="combo">
-    <span id="comboText">Combo</span>
-    <em id="comboCount">x1</em>
+    <div class="kicker" id="comboWho">turbo</div>
+    <strong id="comboHits">x1</strong>
+    <div class="kicker">combo</div>
   </div>
 
-  <main class="stage">
-    <div class="wheel-wrap">
-      <div class="glow"></div>
-      <div class="pointer"></div>
-      <div class="ring"></div>
-      <div class="wheel-rotator" id="rotator">
-        <canvas id="wheel" width="800" height="800"></canvas>
-      </div>
-      <div class="hub">SPIN<br />LIVE</div>
-    </div>
-  </main>
-
-  <aside class="card" id="card">
+  <aside class="banner" id="banner">
     <img class="avatar" id="avatar" alt="" />
     <div>
       <div class="who" id="who">@user</div>
       <div class="name" id="displayName">Waiting for gifts</div>
-      <div class="meta">
-        <span class="gift" id="giftLine">Gift</span>
-        <span> · </span>
-        <span class="diamonds" id="diamondLine">0 💎</span>
-      </div>
+      <div class="meta" id="giftLine">Gift</div>
     </div>
-    <div class="prize-chip">
-      <span class="kicker">Landed on</span>
-      <b id="prize">—</b>
-    </div>
+    <div class="tag" id="tag">DISC</div>
   </aside>
 
-  <div class="fx" id="fx"></div>
+  <div class="cleared" id="cleared">
+    <h2>SECTOR CLEARED</h2>
+    <p id="clearedSub">Next grid incoming</p>
+  </div>
 
   <div class="settings-wrap" id="settings">
     <button class="gear" type="button" title="Settings">⚙</button>
     <section class="settings">
-    <h2>Overlay settings</h2>
-    <label>WebSocket</label>
-    <input id="wsUrl" value="ws://localhost:21213/" />
-    <div class="row">
-      <div>
-        <label>Min diamonds to spin</label>
-        <input id="minDiamonds" type="number" min="0" value="0" />
+      <div class="kicker">Grid settings</div>
+      <label>WebSocket</label>
+      <input id="wsUrl" value="ws://localhost:21213/" />
+      <div class="grid2">
+        <div>
+          <label>Min diamonds</label>
+          <input id="minDiamonds" type="number" min="0" value="0" />
+        </div>
+        <div>
+          <label>Sector 1 energy</label>
+          <input id="baseNeed" type="number" min="50" value="500" />
+        </div>
       </div>
-      <div>
-        <label>Goal diamonds</label>
-        <input id="goalDiamonds" type="number" min="1" value="10000" />
+      <div class="btns">
+        <button type="button" id="saveBtn">Save</button>
+        <button type="button" class="ghost" id="resetBtn">Reset grid</button>
+        <button type="button" id="demoBtn">Demo gift</button>
+        <button type="button" class="ghost" id="comboBtn">Demo combo</button>
       </div>
-    </div>
-    <label>Wheel labels (comma separated)</label>
-    <textarea id="prizes">JACKPOT, SHOUTOUT, BONUS, WILD, VIP, LUCKY, MYSTERY, DOUBLE</textarea>
-    <div class="btns">
-      <button type="button" id="saveBtn">Save</button>
-      <button type="button" class="ghost" id="resetGoalBtn">Reset goal</button>
-      <button type="button" id="demoBtn">Demo gift</button>
-      <button type="button" class="ghost" id="comboBtn">Demo combo</button>
-    </div>
-    <p class="hint">Hover the gear to edit. D = demo gift, C = combo, R = reset goal. Add ?clean=1 in OBS to hide this panel. Add ?preview=1 for a dark test background.</p>
+      <p class="hint">D = gift, C = combo, R = reset. ?overlay=1 makes the void transparent for OBS. Beat sectors with TikTok gifts.</p>
     </section>
   </div>
 
   <script>
-    const DEFAULTS = {
-      wsUrl: "ws://localhost:21213/",
-      minDiamonds: 0,
-      goalDiamonds: 10000,
-      prizes: ["JACKPOT", "SHOUTOUT", "BONUS", "WILD", "VIP", "LUCKY", "MYSTERY", "DOUBLE"],
-      totalDiamonds: 0
-    };
-
-    const COLORS = [
-      "#ff2e63", "#3dffef", "#ffd76a", "#b57bff",
-      "#3dff8a", "#ff9f1c", "#4da3ff", "#ff5d8f"
+    const DEFAULTS = { wsUrl: "ws://localhost:21213/", minDiamonds: 0, baseNeed: 500 };
+    const PALETTES = [
+      { grid: "#00e8ff", hot: "#ff6a00", fog: "#00131c" },
+      { grid: "#3df0ff", hot: "#ff8a1a", fog: "#00141f" },
+      { grid: "#ff6a00", hot: "#00e8ff", fog: "#140800" },
+      { grid: "#ff2bd6", hot: "#00e8ff", fog: "#120018" },
+      { grid: "#ffffff", hot: "#00e8ff", fog: "#07070c" }
     ];
 
     const params = new URLSearchParams(location.search);
     const state = loadState();
-    const queue = [];
-    let spinning = false;
-    let rotation = 0;
+    const board = new Map();
+    const discs = [];
+    const bikes = [];
+    const voxels = [];
+    const sparks = [];
+
     let ws = null;
     let reconnectTimer = 0;
-    let comboHideTimer = 0;
-    let cardHideTimer = 0;
+    let comboHide = 0;
+    let bannerHide = 0;
+    let clearing = false;
+    let canvas, ctx, w = 0, h = 0, last = 0;
+
+    const sprites = {
+      cyan: loadImg("assets/cycle-cyan.png"),
+      orange: loadImg("assets/cycle-orange.png"),
+      riderCyan: loadImg("assets/rider-cyan.png"),
+      riderOrange: loadImg("assets/rider-orange.png")
+    };
+
+    const world = {
+      scroll: 0,
+      turbo: 0,
+      energy: state.energy || 0,
+      level: state.level || 1,
+      shake: 0
+    };
 
     const els = {
-      body: document.body,
       status: document.getElementById("status"),
       statusText: document.getElementById("statusText"),
-      goalCount: document.getElementById("goalCount"),
-      goalFill: document.getElementById("goalFill"),
-      rotator: document.getElementById("rotator"),
-      canvas: document.getElementById("wheel"),
-      card: document.getElementById("card"),
+      sectorLabel: document.getElementById("sectorLabel"),
+      needText: document.getElementById("needText"),
+      fill: document.getElementById("fill"),
+      board: document.getElementById("board"),
+      combo: document.getElementById("combo"),
+      comboWho: document.getElementById("comboWho"),
+      comboHits: document.getElementById("comboHits"),
+      banner: document.getElementById("banner"),
       avatar: document.getElementById("avatar"),
       who: document.getElementById("who"),
       displayName: document.getElementById("displayName"),
       giftLine: document.getElementById("giftLine"),
-      diamondLine: document.getElementById("diamondLine"),
-      prize: document.getElementById("prize"),
-      combo: document.getElementById("combo"),
-      comboText: document.getElementById("comboText"),
-      comboCount: document.getElementById("comboCount"),
-      fx: document.getElementById("fx"),
+      tag: document.getElementById("tag"),
+      cleared: document.getElementById("cleared"),
+      clearedSub: document.getElementById("clearedSub"),
+      pilotImg: document.getElementById("pilotImg"),
+      pilotLabel: document.getElementById("pilotLabel"),
       settings: document.getElementById("settings"),
       wsUrl: document.getElementById("wsUrl"),
       minDiamonds: document.getElementById("minDiamonds"),
-      goalDiamonds: document.getElementById("goalDiamonds"),
-      prizes: document.getElementById("prizes")
+      baseNeed: document.getElementById("baseNeed")
     };
 
-    if (params.has("preview")) document.body.classList.add("preview");
+    if (params.has("overlay")) document.body.classList.add("overlay");
     if (params.has("clean")) els.settings.style.display = "none";
     if (params.has("demo")) setTimeout(() => demoGift(false), 800);
 
+    canvas = document.getElementById("view");
+    ctx = canvas.getContext("2d");
     fillForm();
-    drawWheel();
-    renderGoal();
+    renderHud();
     connect();
+    spawnBikes(9);
+    window.addEventListener("resize", resize);
+    resize();
+    requestAnimationFrame(loop);
 
     document.getElementById("saveBtn").onclick = saveSettings;
-    document.getElementById("resetGoalBtn").onclick = resetGoal;
+    document.getElementById("resetBtn").onclick = resetGrid;
     document.getElementById("demoBtn").onclick = () => demoGift(false);
     document.getElementById("comboBtn").onclick = () => demoGift(true);
     window.addEventListener("keydown", onKey);
-    window.addEventListener("resize", drawWheel);
+    els.avatar.addEventListener("error", () => { els.avatar.style.display = "none"; });
 
     function loadState() {
       let saved = {};
-      try { saved = JSON.parse(localStorage.getItem("tiktok-roulette") || "{}"); } catch {}
-      const prizes = (params.get("prizes") || saved.prizes || DEFAULTS.prizes.join(","))
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean);
+      try { saved = JSON.parse(localStorage.getItem("lightgrid") || "{}"); } catch {}
       return {
         wsUrl: params.get("ws") || saved.wsUrl || DEFAULTS.wsUrl,
         minDiamonds: num(params.get("min") ?? saved.minDiamonds, DEFAULTS.minDiamonds),
-        goalDiamonds: num(params.get("goal") ?? saved.goalDiamonds, DEFAULTS.goalDiamonds),
-        prizes: prizes.length ? prizes : DEFAULTS.prizes.slice(),
-        totalDiamonds: num(saved.totalDiamonds, 0)
+        baseNeed: num(params.get("need") ?? saved.baseNeed, DEFAULTS.baseNeed),
+        level: num(saved.level, 1),
+        energy: num(saved.energy, 0)
       };
     }
 
     function persist() {
-      localStorage.setItem("tiktok-roulette", JSON.stringify(state));
+      localStorage.setItem("lightgrid", JSON.stringify({
+        wsUrl: state.wsUrl,
+        minDiamonds: state.minDiamonds,
+        baseNeed: state.baseNeed,
+        level: world.level,
+        energy: world.energy
+      }));
     }
 
     function fillForm() {
       els.wsUrl.value = state.wsUrl;
       els.minDiamonds.value = state.minDiamonds;
-      els.goalDiamonds.value = state.goalDiamonds;
-      els.prizes.value = state.prizes.join(", ");
+      els.baseNeed.value = state.baseNeed;
     }
 
     function saveSettings() {
       state.wsUrl = els.wsUrl.value.trim() || DEFAULTS.wsUrl;
       state.minDiamonds = Math.max(0, num(els.minDiamonds.value, 0));
-      state.goalDiamonds = Math.max(1, num(els.goalDiamonds.value, 10000));
-      state.prizes = els.prizes.value.split(",").map((s) => s.trim()).filter(Boolean);
+      state.baseNeed = Math.max(50, num(els.baseNeed.value, 500));
       persist();
-      drawWheel();
-      renderGoal();
+      renderHud();
       connect(true);
     }
 
-    function resetGoal() {
-      state.totalDiamonds = 0;
+    function resetGrid() {
+      world.level = 1;
+      world.energy = 0;
+      world.turbo = 0;
+      board.clear();
       persist();
-      renderGoal();
+      renderHud();
+      renderBoard();
+      els.cleared.classList.remove("show");
+      clearing = false;
     }
 
-    function renderGoal() {
-      const goal = state.goalDiamonds;
-      const total = state.totalDiamonds;
-      const pct = Math.max(0, Math.min(100, (total / goal) * 100));
-      els.goalCount.textContent = `${fmt(total)} / ${fmt(goal)} 💎`;
-      els.goalFill.style.width = pct + "%";
-      els.goalFill.classList.toggle("complete", total >= goal);
+    function needFor(level) {
+      return Math.round(state.baseNeed * Math.pow(1.5, level - 1));
+    }
+
+    function theme() {
+      return PALETTES[(world.level - 1) % PALETTES.length];
+    }
+
+    function renderHud() {
+      const need = needFor(world.level);
+      els.sectorLabel.textContent = `SECTOR ${String(world.level).padStart(2, "0")}`;
+      els.needText.textContent = `${fmt(world.energy)} / ${fmt(need)}`;
+      els.fill.style.width = Math.max(0, Math.min(100, (world.energy / need) * 100)) + "%";
+      const t = theme();
+      document.documentElement.style.setProperty("--cyan", t.grid);
+      document.documentElement.style.setProperty("--orange", t.hot);
+    }
+
+    function renderBoard() {
+      const top = [...board.entries()].sort((a, b) => b[1] - a[1]).slice(0, 4);
+      els.board.replaceChildren();
+      if (!top.length) {
+        const row = document.createElement("div");
+        row.className = "row";
+        row.innerHTML = "<span>Awaiting gifts</span><b></b>";
+        els.board.append(row);
+        return;
+      }
+      top.forEach(([name, n], i) => {
+        const row = document.createElement("div");
+        row.className = "row";
+        const a = document.createElement("span");
+        a.textContent = `${i + 1}. ${name}`;
+        const b = document.createElement("b");
+        b.textContent = fmt(n);
+        row.append(a, b);
+        els.board.append(row);
+      });
     }
 
     function setConnected(on) {
       els.status.classList.toggle("on", on);
-      els.statusText.textContent = on ? "Connected" : "Offline";
+      els.statusText.textContent = on ? "Linked" : "Offline";
     }
 
     function connect(force) {
@@ -697,20 +608,10 @@
       }
       if (ws && (ws.readyState === 0 || ws.readyState === 1)) return;
       setConnected(false);
-      try {
-        ws = new WebSocket(state.wsUrl);
-      } catch {
-        scheduleReconnect();
-        return;
-      }
-      ws.onopen = () => {
-        setConnected(true);
-        clearTimeout(reconnectTimer);
-      };
-      ws.onclose = () => {
-        setConnected(false);
-        scheduleReconnect();
-      };
+      try { ws = new WebSocket(state.wsUrl); }
+      catch { scheduleReconnect(); return; }
+      ws.onopen = () => { setConnected(true); clearTimeout(reconnectTimer); };
+      ws.onclose = () => { setConnected(false); scheduleReconnect(); };
       ws.onerror = () => setConnected(false);
       ws.onmessage = (ev) => {
         let raw;
@@ -742,32 +643,116 @@
     function handleGift(raw) {
       const gift = normalizeGift(raw);
       if (!gift.uniqueId && !gift.nickname) return;
-
-      const comboInProgress = gift.giftType === 1 && !gift.repeatEnd;
-      if (comboInProgress) {
+      if (gift.giftType === 1 && !gift.repeatEnd) {
+        world.turbo = Math.min(18, world.turbo + 1.2);
         showCombo(gift);
+        sparkBurst(0, 22, 90, 8, theme().grid);
         return;
       }
-
       hideComboSoon();
-      addDiamonds(gift.totalDiamonds);
       if (gift.totalDiamonds < state.minDiamonds) return;
-
-      addDiamonds(gift.totalDiamonds);
-      queue.push(gift);
-      processQueue();
+      fireDisc(gift);
     }
 
-    function addDiamonds(amount) {
-      state.totalDiamonds += Math.max(0, amount);
+    function fireDisc(gift) {
+        const target = nearestBike() || { x: (Math.random() < 0.5 ? -120 : 120), z: 280 };
+        discs.push({
+          x: (Math.random() < 0.5 ? -1 : 1) * (30 + Math.random() * 24),
+          y: 36,
+          z: 100,
+        tx: target.x,
+        tz: target.z,
+        vx: 0,
+        vz: 0,
+        name: gift.nickname || gift.uniqueId,
+        uniqueId: gift.uniqueId,
+        giftName: gift.giftName,
+        repeatCount: gift.repeatCount,
+        diamonds: gift.totalDiamonds,
+        profilePictureUrl: gift.profilePictureUrl,
+        t: 0
+      });
+      world.turbo = Math.min(22, world.turbo + Math.min(12, gift.totalDiamonds / 20));
+      world.shake = Math.min(14, 4 + gift.totalDiamonds / 80);
+    }
+
+    function nearestBike() {
+      let best = null;
+      let bestZ = 1e9;
+      bikes.forEach((b) => {
+        if (b.z > 110 && b.z < bestZ) {
+          best = b;
+          bestZ = b.z;
+        }
+      });
+      return best;
+    }
+
+    function applyGift(gift) {
+      world.energy += gift.diamonds;
+      const key = gift.name;
+      board.set(key, (board.get(key) || 0) + gift.diamonds);
       persist();
-      renderGoal();
+      renderHud();
+      renderBoard();
+      showBanner(gift);
+      if (!clearing && world.energy >= needFor(world.level)) clearSector(gift);
     }
 
-    function processQueue() {
-      if (spinning || !queue.length) return;
-      const gift = queue.shift();
-      spinFor(gift);
+    function clearSector(gift) {
+      clearing = true;
+      world.turbo = 22;
+      world.shake = 16;
+      els.clearedSub.textContent = `${gift.name} opened the next grid`;
+      els.cleared.classList.add("show");
+      for (let i = 0; i < 80; i++) voxelBurst(0, 30, 120, theme().grid);
+      setTimeout(() => {
+        world.level += 1;
+        world.energy = 0;
+        board.clear();
+        persist();
+        renderHud();
+        renderBoard();
+        spawnBikes(8 + Math.min(8, world.level));
+        els.cleared.classList.remove("show");
+        clearing = false;
+      }, 2600);
+    }
+
+    function showBanner(gift) {
+      els.who.textContent = gift.uniqueId ? `@${gift.uniqueId}` : "program";
+      els.displayName.textContent = gift.name;
+      els.giftLine.textContent = gift.repeatCount > 1
+        ? `${gift.giftName} ×${gift.repeatCount}  ·  ${fmt(gift.diamonds)} 💎`
+        : `${gift.giftName}  ·  ${fmt(gift.diamonds)} 💎`;
+      els.tag.textContent = gift.diamonds >= 300 ? "OVERCLOCK" : "IDENTITY DISC";
+      if (gift.profilePictureUrl) {
+        els.avatar.src = gift.profilePictureUrl;
+        els.avatar.style.mixBlendMode = "normal";
+      } else {
+        els.avatar.src = gift.diamonds >= 100 ? "assets/rider-orange.png" : "assets/rider-cyan.png";
+        els.avatar.style.mixBlendMode = "screen";
+      }
+      els.avatar.style.display = "block";
+      if (els.pilotImg) {
+        els.pilotImg.src = gift.diamonds >= 100 ? "assets/rider-orange.png" : "assets/rider-cyan.png";
+        els.pilotLabel.textContent = gift.name || "Grid racer";
+      }
+      els.banner.classList.add("show");
+      clearTimeout(bannerHide);
+      bannerHide = setTimeout(() => els.banner.classList.remove("show"), 5600);
+    }
+
+    function showCombo(gift) {
+      els.comboWho.textContent = gift.nickname || gift.uniqueId;
+      els.comboHits.textContent = `x${gift.repeatCount}`;
+      els.combo.classList.add("show");
+      clearTimeout(comboHide);
+    }
+
+    function hideComboSoon() {
+      clearTimeout(comboHide);
+      comboHide = setTimeout(() => els.combo.classList.remove("show"), 450);
     }
 
     function normalizeGift(d) {
@@ -777,186 +762,616 @@
       const nickname = d.nickname || user.nickname || uniqueId || "Viewer";
       const giftName = d.giftName || giftObj.giftName || giftObj.name || giftObj.gift_name || "Gift";
       const giftType = num(first(d.giftType, giftObj.gift_type, giftObj.giftType), 0);
-      const diamondCount = num(first(
-        d.diamondCount, d.diamond_count, giftObj.diamondCount, giftObj.diamond_count
-      ), 0);
-      const repeatCount = Math.max(1, num(first(
-        d.repeatCount, d.repeat_count, giftObj.repeat_count, giftObj.repeatCount
-      ), 1));
+      const diamondCount = num(first(d.diamondCount, d.diamond_count, giftObj.diamondCount, giftObj.diamond_count), 0);
+      const repeatCount = Math.max(1, num(first(d.repeatCount, d.repeat_count, giftObj.repeat_count, giftObj.repeatCount), 1));
       const repeatEnd = isTrue(first(d.repeatEnd, d.repeat_end, giftObj.repeat_end, giftObj.repeatEnd));
       return {
-        uniqueId,
-        nickname,
-        giftName,
-        giftType,
-        diamondCount,
-        repeatCount,
-        repeatEnd,
+        uniqueId, nickname, giftName, giftType, diamondCount, repeatCount, repeatEnd,
         totalDiamonds: diamondCount * repeatCount,
-        profilePictureUrl: d.profilePictureUrl || user.profilePictureUrl || "",
-        giftPictureUrl: d.giftPictureUrl || ""
+        profilePictureUrl: d.profilePictureUrl || user.profilePictureUrl || ""
       };
     }
 
-    function first(...vals) {
-      return vals.find((v) => v !== undefined && v !== null);
+    function first(...vals) { return vals.find((v) => v !== undefined && v !== null); }
+    function isTrue(v) { return v === true || v === 1 || v === "1" || v === "true"; }
+    function num(v, fallback) { const n = Number(v); return Number.isFinite(n) ? n : fallback; }
+    function fmt(n) { return Number(n || 0).toLocaleString("en-US"); }
+
+    function resize() {
+      const dpr = Math.min(2, window.devicePixelRatio || 1);
+      w = window.innerWidth;
+      h = window.innerHeight;
+      canvas.width = Math.floor(w * dpr);
+      canvas.height = Math.floor(h * dpr);
+      canvas.style.width = w + "px";
+      canvas.style.height = h + "px";
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     }
 
-    function isTrue(v) {
-      return v === true || v === 1 || v === "1" || v === "true";
+    function project(x, y, z) {
+      if (z < 16) return null;
+      const fov = Math.max(260, h * 0.48);
+      const horizon = h * 0.33;
+      const camY = h * 0.13;
+      const s = fov / z;
+      return { x: w * 0.5 + x * s, y: horizon + (camY - y) * s, s };
     }
 
-    function num(v, fallback) {
-      const n = Number(v);
-      return Number.isFinite(n) ? n : fallback;
+    function spawnBikes(n) {
+      bikes.length = 0;
+      for (let i = 0; i < n; i++) {
+        const orange = Math.random() < 0.5;
+        bikes.push({
+          x: (Math.random() < 0.5 ? -1 : 1) * (55 + Math.random() * 200),
+          y: 10,
+          z: 150 + i * 48 + Math.random() * 36,
+          speed: 0.7 + Math.random() * 1.1,
+          color: orange ? theme().hot : theme().grid,
+          kind: orange ? "orange" : "cyan",
+          lane: Math.random() * Math.PI * 2,
+          lean: 0
+        });
+      }
     }
 
-    function fmt(n) {
-      return Number(n || 0).toLocaleString("en-US");
+    function voxelBurst(x, y, z, color) {
+      for (let i = 0; i < 16; i++) {
+        const a = Math.random() * Math.PI * 2;
+        voxels.push({
+          x, y, z,
+          vx: Math.cos(a) * (2 + Math.random() * 6),
+          vy: 2 + Math.random() * 5,
+          vz: (Math.random() - 0.4) * 8,
+          life: 22 + Math.random() * 16,
+          color,
+          s: 4 + Math.random() * 7
+        });
+      }
     }
 
-    function drawWheel() {
-      const canvas = els.canvas;
-      const ctx = canvas.getContext("2d");
-      const size = 800;
-      canvas.width = size;
-      canvas.height = size;
-      const cx = size / 2;
-      const cy = size / 2;
-      const r = size / 2 - 8;
-      const prizes = state.prizes;
-      const slice = (Math.PI * 2) / prizes.length;
-      ctx.clearRect(0, 0, size, size);
+    function sparkBurst(x, y, z, n, color) {
+      for (let i = 0; i < n; i++) {
+        sparks.push({ x, y, z, vx: (Math.random() - 0.5) * 8, vy: Math.random() * 6, vz: -Math.random() * 6, life: 14, color });
+      }
+    }
 
-      prizes.forEach((label, i) => {
-        const start = i * slice - Math.PI / 2;
-        const end = start + slice;
-        ctx.beginPath();
-        ctx.moveTo(cx, cy);
-        ctx.arc(cx, cy, r, start, end);
-        ctx.closePath();
-        ctx.fillStyle = COLORS[i % COLORS.length];
-        ctx.fill();
-        ctx.strokeStyle = "rgba(8,8,16,0.65)";
-        ctx.lineWidth = 4;
-        ctx.stroke();
+    function loop(t) {
+      const dt = Math.min(32, t - last || 16) / 16;
+      last = t;
+      const pal = theme();
+      const speed = (2.4 + world.level * 0.28 + world.turbo) * dt;
+      world.scroll += speed * 18;
+      world.turbo *= 0.985;
+      world.shake *= 0.88;
 
-        ctx.save();
-        ctx.translate(cx, cy);
-        ctx.rotate(start + slice / 2);
-        ctx.textAlign = "right";
-        ctx.fillStyle = "#0b0c12";
-        ctx.font = "bold 28px Outfit, sans-serif";
-        ctx.shadowColor = "rgba(255,255,255,0.35)";
-        ctx.shadowBlur = 8;
-        ctx.fillText(label, r - 28, 10);
-        ctx.restore();
-      });
+      ctx.fillStyle = pal.fog;
+      ctx.fillRect(0, 0, w, h);
+      drawSky(pal);
+      drawCity(pal, speed);
+      drawRoad(pal);
+      drawGrid(pal);
+      updateBikes(speed, pal);
+      updateDiscs(dt, pal);
+      updateVoxels(dt);
+      drawPlayer(pal);
+      drawSparks(dt);
 
+      if (world.shake > 0.4) {
+        const dx = (Math.random() - 0.5) * world.shake;
+        const dy = (Math.random() - 0.5) * world.shake;
+        canvas.style.transform = `translate(${dx}px, ${dy}px)`;
+      } else {
+        canvas.style.transform = "";
+      }
+
+      requestAnimationFrame(loop);
+    }
+
+    function drawSky(pal) {
+      const g = ctx.createLinearGradient(0, 0, 0, h * 0.42);
+      g.addColorStop(0, "#000");
+      g.addColorStop(1, pal.fog);
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, w, h * 0.42);
+      const hg = ctx.createRadialGradient(w / 2, h * 0.33, 10, w / 2, h * 0.33, w * 0.42);
+      hg.addColorStop(0, pal.hot + "aa");
+      hg.addColorStop(0.18, pal.grid + "44");
+      hg.addColorStop(1, "transparent");
+      ctx.fillStyle = hg;
+      ctx.fillRect(0, 0, w, h * 0.5);
+      ctx.strokeStyle = pal.grid;
+      ctx.globalAlpha = 0.7;
+      ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.arc(cx, cy, r - 2, 0, Math.PI * 2);
-      ctx.strokeStyle = "rgba(255,215,106,0.35)";
-      ctx.lineWidth = 10;
+      ctx.moveTo(0, h * 0.33);
+      ctx.lineTo(w, h * 0.33);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+
+    function drawRoad(pal) {
+      const a = project(-280, 0, 46);
+      const b = project(280, 0, 46);
+      const c = project(280, 0, 980);
+      const d = project(-280, 0, 980);
+      if (!a || !b || !c || !d) return;
+      ctx.beginPath();
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(b.x, b.y);
+      ctx.lineTo(c.x, c.y);
+      ctx.lineTo(d.x, d.y);
+      ctx.closePath();
+      ctx.fillStyle = "rgba(0, 6, 12, 0.92)";
+      ctx.fill();
+      ctx.strokeStyle = pal.grid;
+      ctx.globalAlpha = 0.35;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+
+    function drawGrid(pal) {
+      const step = 70;
+      const off = world.scroll % step;
+      ctx.save();
+      ctx.strokeStyle = pal.grid;
+      ctx.shadowColor = pal.grid;
+      ctx.shadowBlur = 10;
+      ctx.lineWidth = 1.4;
+
+      for (let x = -900; x <= 900; x += step) {
+        const a = project(x, 0, 48);
+        const b = project(x, 0, 980);
+        if (!a || !b) continue;
+        const lane = Math.abs(x) === 210 || x === 0;
+        ctx.globalAlpha = lane ? 0.95 : 0.28;
+        ctx.lineWidth = lane ? 2.4 : 1.2;
+        ctx.beginPath();
+        ctx.moveTo(a.x, a.y);
+        ctx.lineTo(b.x, b.y);
+        ctx.stroke();
+      }
+
+      for (let z = 48 + (step - off); z < 980; z += step) {
+        const L = project(-900, 0, z);
+        const R = project(900, 0, z);
+        if (!L || !R) continue;
+        ctx.lineWidth = 1.3;
+        ctx.globalAlpha = 0.18 + 0.55 * (1 - z / 980);
+        ctx.beginPath();
+        ctx.moveTo(L.x, L.y);
+        ctx.lineTo(R.x, R.y);
+        ctx.stroke();
+      }
+      ctx.restore();
+      ctx.globalAlpha = 1;
+    }
+
+    function drawCity(pal, speed) {
+      ctx.save();
+      for (let i = 0; i < 20; i++) {
+        const span = 20 * 160;
+        const z = ((i * 160) - world.scroll * 0.35 % span + span) % span + 180;
+        const side = i % 2 === 0 ? -1 : 1;
+        const x = side * (300 + (i * 53) % 480);
+        const height = 90 + (i * 41) % 240;
+        const width = 28 + (i * 13) % 40;
+        const b0 = project(x, 0, z);
+        const b1 = project(x + width * side, 0, z);
+        const t0 = project(x, height, z);
+        const t1 = project(x + width * side, height, z);
+        if (!b0 || !t0 || !b1 || !t1) continue;
+        ctx.globalAlpha = Math.max(0.12, 1 - z / 1100);
+        ctx.strokeStyle = pal.grid;
+        ctx.shadowColor = pal.grid;
+        ctx.shadowBlur = 8;
+        ctx.lineWidth = 1.3;
+        ctx.beginPath();
+        ctx.moveTo(b0.x, b0.y);
+        ctx.lineTo(t0.x, t0.y);
+        ctx.lineTo(t1.x, t1.y);
+        ctx.lineTo(b1.x, b1.y);
+        ctx.stroke();
+        ctx.fillStyle = pal.hot;
+        ctx.globalAlpha *= 0.45;
+        ctx.fillRect(t0.x - 2, t0.y - 2, 4, 4);
+      }
+      ctx.restore();
+      ctx.globalAlpha = 1;
+    }
+
+    function updateBikes(speed, pal) {
+      bikes.sort((a, b) => b.z - a.z);
+      bikes.forEach((b) => {
+        b.z -= b.speed * speed * 0.35;
+        b.lean = Math.sin((world.scroll + b.lane) * 0.012) * 5;
+        b.x += Math.sin((world.scroll + b.lane) * 0.01) * 0.32;
+        if (b.z < 108) {
+          b.z = 430 + Math.random() * 160;
+          b.x = (Math.random() < 0.5 ? -1 : 1) * (70 + Math.random() * 200);
+          b.color = Math.random() < 0.45 ? pal.hot : pal.grid;
+          b.kind = b.color === pal.hot ? "orange" : "cyan";
+        }
+        drawLightWall(b.x, b.z, Math.max(50, b.z - 160), b.color, 16);
+        drawLightCycle(b.x, b.z, b.color, { lean: b.lean, kind: b.kind });
+      });
+    }
+
+    function quad(a, b, c, d, fill, stroke, width) {
+      if (!a || !b || !c || !d) return;
+      ctx.beginPath();
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(b.x, b.y);
+      ctx.lineTo(c.x, c.y);
+      ctx.lineTo(d.x, d.y);
+      ctx.closePath();
+      if (fill) {
+        ctx.fillStyle = fill;
+        ctx.fill();
+      }
+      if (stroke) {
+        ctx.strokeStyle = stroke;
+        ctx.lineWidth = width || 1.4;
+        ctx.stroke();
+      }
+    }
+
+    function lineTo(a, b, stroke, width) {
+      if (!a || !b) return;
+      ctx.beginPath();
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(b.x, b.y);
+      ctx.strokeStyle = stroke;
+      ctx.lineWidth = width || 1.5;
       ctx.stroke();
     }
 
-    function spinFor(gift) {
-      spinning = true;
-      const count = state.prizes.length;
-      const index = Math.floor(Math.random() * count);
-      const slice = 360 / count;
-      const extra = 5 + Math.floor(Math.random() * 3);
-      const current = ((rotation % 360) + 360) % 360;
-      const targetMod = (360 - (index * slice + slice / 2) + 360) % 360;
-      let delta = targetMod - current;
-      if (delta <= 0) delta += 360;
-      rotation += extra * 360 + delta;
-
-      els.rotator.style.transition = "none";
-      void els.rotator.offsetWidth;
-      els.rotator.style.transition = "transform 5.2s cubic-bezier(0.12, 0.72, 0.08, 1)";
-      els.rotator.style.transform = `rotate(${rotation}deg)`;
-
-      showCard(gift, "SPINNING");
-      window.setTimeout(() => {
-        const prize = state.prizes[index];
-        showCard(gift, prize);
-        burst();
-        spinning = false;
-        processQueue();
-      }, 5300);
+    function drawLightWall(x, zFrom, zTo, color, height) {
+      const steps = 8;
+      for (let i = 0; i < steps; i++) {
+        const u0 = i / steps;
+        const u1 = (i + 1) / steps;
+        const z0 = zFrom + (zTo - zFrom) * u0;
+        const z1 = zFrom + (zTo - zFrom) * u1;
+        const fade = 1 - u0;
+        const a0 = project(x - 1.2, 0, z0);
+        const a1 = project(x - 1.2, height * fade, z0);
+        const b1 = project(x + 1.2, height * fade, z1);
+        const b0 = project(x + 1.2, 0, z1);
+        if (!a0 || !a1 || !b0 || !b1) continue;
+        ctx.globalAlpha = 0.1 + 0.22 * fade;
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.moveTo(a0.x, a0.y);
+        ctx.lineTo(a1.x, a1.y);
+        ctx.lineTo(b1.x, b1.y);
+        ctx.lineTo(b0.x, b0.y);
+        ctx.closePath();
+        ctx.fill();
+        ctx.globalAlpha = 0.45 * fade;
+        ctx.strokeStyle = color;
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 12;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(a1.x, a1.y);
+        ctx.lineTo(b1.x, b1.y);
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+      }
+      ctx.globalAlpha = 1;
     }
 
-    function showCard(gift, prize) {
-      els.who.textContent = gift.uniqueId ? `@${gift.uniqueId}` : "gifter";
-      els.displayName.textContent = gift.nickname || gift.uniqueId || "Viewer";
-      els.giftLine.textContent = gift.repeatCount > 1
-        ? `${gift.giftName} ×${gift.repeatCount}`
-        : gift.giftName;
-      els.diamondLine.textContent = `${fmt(gift.totalDiamonds)} 💎`;
-      els.prize.textContent = prize;
-      if (gift.profilePictureUrl) {
-        els.avatar.src = gift.profilePictureUrl;
-        els.avatar.style.display = "block";
+    function drawWheel(p, s, color, spin, player) {
+      if (!p) return;
+      const rx = Math.max(2.8, 5 * s * (player ? 1.25 : 1.05));
+      const ry = Math.max(7, 14 * s * (player ? 1.3 : 1.15));
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.shadowColor = color;
+      ctx.shadowBlur = player ? 22 : 12;
+      ctx.strokeStyle = color;
+      ctx.fillStyle = "#02080d";
+      ctx.lineWidth = Math.max(1.6, s * 2.1);
+      ctx.beginPath();
+      ctx.ellipse(0, 0, rx, ry, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.ellipse(0, 0, rx * 0.32, ry * 0.32, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.globalAlpha = 0.85;
+      ctx.lineWidth = Math.max(1, s * 1.1);
+      for (let i = 0; i < 6; i++) {
+        const a = spin + (i * Math.PI) / 3;
+        ctx.beginPath();
+        ctx.moveTo(Math.cos(a) * rx * 0.2, Math.sin(a) * ry * 0.2);
+        ctx.lineTo(Math.cos(a) * rx * 0.88, Math.sin(a) * ry * 0.88);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    function loadImg(src) {
+      const img = new Image();
+      img.src = src;
+      return img;
+    }
+
+    function spriteReady(img) {
+      return !!(img && img.complete && img.naturalWidth > 0);
+    }
+
+    function drawSpriteBike(x, z, img, player, lean) {
+      const p = project(x, 7, z);
+      if (!p || !spriteReady(img)) return false;
+      const hgt = p.s * (player ? 168 : 92);
+      const wid = hgt * (img.width / img.height);
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate((lean || 0) * 0.01);
+      ctx.globalCompositeOperation = "screen";
+      ctx.drawImage(img, -wid * 0.5, -hgt * 0.84, wid, hgt);
+      ctx.restore();
+      return true;
+    }
+    function drawLightCycle(x, zRear, color, opts) {
+      const player = !!(opts && opts.player);
+      const lean = (opts && opts.lean) || 0;
+      const kind = (opts && opts.kind) || (player ? "cyan" : "orange");
+      const img = kind === "orange" ? sprites.orange : sprites.cyan;
+      if (drawSpriteBike(x, zRear, img, player, lean)) return;
+
+      const len = player ? 96 : 78;
+      const zF = zRear + len;
+      const zC = zRear + len * 0.34;
+      const zB = zRear + len * 0.58;
+      const rear = project(x, 12, zRear);
+      if (!rear) return;
+      const s = rear.s;
+      const L = (dx, y, z) => project(x + dx + lean * (y / 36), y, z);
+
+      ctx.save();
+      ctx.lineJoin = "round";
+      ctx.lineCap = "round";
+      ctx.shadowColor = color;
+      ctx.shadowBlur = player ? 24 : 10;
+      ctx.strokeStyle = color;
+
+      const bellyL = L(-11, 2.5, zRear + 10);
+      const bellyR = L(11, 2.5, zRear + 10);
+      const bellyFL = L(-4.5, 2.2, zF - 12);
+      const bellyFR = L(4.5, 2.2, zF - 12);
+      quad(bellyL, bellyR, bellyFR, bellyFL, "#050b12", color, Math.max(1.2, s * 1.4));
+
+      const deckL = L(-10, 15, zRear + 12);
+      const deckR = L(10, 15, zRear + 12);
+      const tankL = L(-7, 20, zC);
+      const tankR = L(7, 20, zC);
+      const deckFL = L(-3.4, 13, zF - 16);
+      const deckFR = L(3.4, 13, zF - 16);
+      quad(deckL, tankL, tankR, deckR, "#0b1c28", color, Math.max(1.3, s * 1.6));
+      quad(tankL, tankR, deckFR, deckFL, "#0b1c28", color, Math.max(1.2, s * 1.5));
+
+      const stripeL0 = L(-12, 5, zRear + 8);
+      const stripeL1 = L(-9, 18, zC);
+      const stripeL2 = L(-4.5, 13, zF - 18);
+      const stripeL3 = L(-8, 4, zRear + 26);
+      quad(stripeL0, stripeL1, stripeL2, stripeL3, color, "#041016", Math.max(1, s));
+
+      const stripeR0 = L(12, 5, zRear + 8);
+      const stripeR1 = L(9, 18, zC);
+      const stripeR2 = L(4.5, 13, zF - 18);
+      const stripeR3 = L(8, 4, zRear + 26);
+      quad(stripeR0, stripeR1, stripeR2, stripeR3, color, "#041016", Math.max(1, s));
+
+      const forkL = L(-4.5, 16, zB);
+      const forkR = L(4.5, 16, zB);
+      const axleL = L(-4, 10, zF);
+      const axleR = L(4, 10, zF);
+      lineTo(forkL, axleL, color, Math.max(2, s * 2.4));
+      lineTo(forkR, axleR, color, Math.max(2, s * 2.4));
+      lineTo(L(-8, 14, zRear + 14), forkL, color, Math.max(1.6, s * 1.8));
+      lineTo(L(8, 14, zRear + 14), forkR, color, Math.max(1.6, s * 1.8));
+
+      const front = L(0, 10, zF);
+      drawWheel(front, front ? front.s * 1.15 : s * 0.6, color, world.scroll * 0.09, player);
+
+      const glassL = L(-7.5, 22, zC);
+      const glassR = L(7.5, 22, zC);
+      const glassN = L(0, 18, zB + 4);
+      const glassB = L(0, 28, zC - 4);
+      ctx.globalAlpha = 0.22;
+      quad(glassL, glassR, glassN, glassB, color, color, 1.3);
+      ctx.globalAlpha = 1;
+      drawRider(x, zC, color, lean);
+
+      const pulse = 0.55 + 0.45 * Math.sin(world.scroll * 0.08);
+      [L(-10, 8, zRear - 4), L(10, 8, zRear - 4)].forEach((jet) => {
+        if (!jet) return;
+        ctx.globalAlpha = 0.4 + 0.45 * pulse;
+        ctx.fillStyle = "#fff";
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 22;
+        ctx.beginPath();
+        ctx.ellipse(jet.x, jet.y, 3.8 * s, 7 * s, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.ellipse(jet.x, jet.y, 6.5 * s, 12 * s, 0, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      ctx.globalAlpha = 1;
+
+      const rearWheel = L(0, 11, zRear + 3);
+      drawWheel(rearWheel, s * (player ? 1.35 : 1.15), color, world.scroll * 0.1, player);
+      ctx.restore();
+    }
+
+    function drawRider(x, zC, color, lean) {
+      const helmet = project(x + lean, 38, zC + 2);
+      if (!helmet) return;
+      const s = Math.max(1.4, helmet.s);
+      const visor = project(x + lean * 1.2, 37, zC + 8);
+      const chest = project(x + lean * 0.5, 27, zC + 8);
+      const hip = project(x, 17, zC - 2);
+      const shoulderL = project(x - 9 + lean, 28, zC + 3);
+      const shoulderR = project(x + 9 + lean, 28, zC + 3);
+      const handL = project(x - 9 + lean, 20, zC + 24);
+      const handR = project(x + 9 + lean, 20, zC + 24);
+      const kneeL = project(x - 9, 10, zC + 7);
+      const kneeR = project(x + 9, 10, zC + 7);
+      const bootL = project(x - 7, 5, zC + 16);
+      const bootR = project(x + 7, 5, zC + 16);
+      if (!hip) return;
+
+      ctx.shadowBlur = 12;
+      ctx.strokeStyle = color;
+      lineTo(hip, kneeL, color, Math.max(3, s * 2.4));
+      lineTo(hip, kneeR, color, Math.max(3, s * 2.4));
+      lineTo(kneeL, bootL, color, Math.max(3, s * 2.2));
+      lineTo(kneeR, bootR, color, Math.max(3, s * 2.2));
+      lineTo(shoulderL, handL, color, Math.max(3, s * 2.2));
+      lineTo(shoulderR, handR, color, Math.max(3, s * 2.2));
+      quad(shoulderL, shoulderR, chest, hip, "#0a1218", color, Math.max(1.6, s * 1.4));
+
+      ctx.fillStyle = "#101820";
+      ctx.strokeStyle = color;
+      ctx.lineWidth = Math.max(2, s * 1.6);
+      ctx.beginPath();
+      ctx.ellipse(helmet.x, helmet.y, 5.6 * s, 6.4 * s, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      if (visor) {
+        ctx.fillStyle = color;
+        ctx.globalAlpha = 0.7;
+        ctx.beginPath();
+        ctx.ellipse(visor.x, visor.y, 4.2 * s, 2.6 * s, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+    }
+
+    function drawPlayer(pal) {
+      const lean = Math.sin(world.scroll * 0.01) * 2.2 + (world.turbo > 4 ? 1.5 : 0);
+      drawLightWall(-9, 64, 38, pal.grid, 16);
+      drawLightWall(9, 64, 38, pal.grid, 16);
+      drawLightWall(0, 64, 38, pal.grid, 24);
+      drawLightCycle(0, 58, pal.grid, { player: true, lean, kind: "cyan" });
+    }
+
+    function updateDiscs(dt, pal) {
+      for (let i = discs.length - 1; i >= 0; i--) {
+        const d = discs[i];
+        d.t += dt * 0.045;
+        const u = Math.min(1, d.t);
+        d.x += (d.tx - d.x) * 0.12 * dt;
+        d.y += (28 - d.y) * 0.08 * dt;
+        d.z += (d.tz - d.z) * 0.12 * dt;
+        drawDisc(d, pal);
+        if (u >= 1 || Math.hypot(d.x - d.tx, d.z - d.tz) < 18) {
+          impact(d, pal);
+          discs.splice(i, 1);
+        }
+      }
+    }
+
+    function drawDisc(d, pal) {
+      const p = project(d.x, d.y, d.z);
+      if (!p) return;
+      const s = Math.max(6, 18 * p.s);
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(world.scroll * 0.01);
+      ctx.strokeStyle = pal.hot;
+      ctx.shadowColor = pal.hot;
+      ctx.shadowBlur = 18;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(0, 0, s, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(0, 0, s * 0.45, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+      ctx.save();
+      ctx.fillStyle = "#fff";
+      ctx.shadowColor = pal.grid;
+      ctx.shadowBlur = 12;
+      ctx.font = `700 ${Math.max(12, 14 * p.s)}px Orbitron, sans-serif`;
+      ctx.textAlign = "center";
+      ctx.fillText(d.name, p.x, p.y - s - 8);
+      ctx.restore();
+    }
+
+    function impact(d, pal) {
+      const bike = bikes.find((b) => Math.hypot(b.x - d.tx, b.z - d.tz) < 40);
+      if (bike) {
+        voxelBurst(bike.x, bike.y, bike.z, bike.color);
+        bike.z = 860 + Math.random() * 200;
+        bike.x = (Math.random() < 0.5 ? -1 : 1) * (90 + Math.random() * 200);
       } else {
-        els.avatar.removeAttribute("src");
-        els.avatar.style.display = "none";
+        voxelBurst(d.tx, 24, d.tz, pal.hot);
       }
-      els.card.classList.add("show");
-      clearTimeout(cardHideTimer);
-      cardHideTimer = setTimeout(() => els.card.classList.remove("show"), 8200);
+      sparkBurst(d.tx, 24, d.tz, 18, pal.grid);
+      applyGift(d);
     }
 
-    function showCombo(gift) {
-      els.comboText.textContent = `${gift.nickname || gift.uniqueId} · ${gift.giftName}`;
-      els.comboCount.textContent = `x${gift.repeatCount}`;
-      els.combo.classList.add("show");
-      clearTimeout(comboHideTimer);
-    }
-
-    function hideComboSoon() {
-      clearTimeout(comboHideTimer);
-      comboHideTimer = setTimeout(() => els.combo.classList.remove("show"), 600);
-    }
-
-    function burst() {
-      const box = els.fx.getBoundingClientRect();
-      for (let i = 0; i < 28; i++) {
-        const spark = document.createElement("span");
-        spark.className = "spark";
-        const x = box.width / 2;
-        const y = box.height / 2 - 40;
-        const angle = (Math.PI * 2 * i) / 28;
-        const dist = 90 + Math.random() * 220;
-        spark.style.left = x + "px";
-        spark.style.top = y + "px";
-        spark.style.background = COLORS[i % COLORS.length];
-        spark.style.setProperty("--tx", Math.cos(angle) * dist + "px");
-        spark.style.setProperty("--ty", Math.sin(angle) * dist + "px");
-        els.fx.appendChild(spark);
-        setTimeout(() => spark.remove(), 900);
+    function updateVoxels(dt) {
+      for (let i = voxels.length - 1; i >= 0; i--) {
+        const v = voxels[i];
+        v.x += v.vx * dt;
+        v.y += v.vy * dt;
+        v.z += v.vz * dt;
+        v.vy -= 0.18 * dt;
+        v.life -= dt;
+        const p = project(v.x, v.y, v.z);
+        if (p) {
+          ctx.fillStyle = v.color;
+          ctx.globalAlpha = Math.max(0, v.life / 28);
+          ctx.fillRect(p.x, p.y, v.s * p.s, v.s * p.s);
+        }
+        if (v.life <= 0) voxels.splice(i, 1);
       }
+      ctx.globalAlpha = 1;
+    }
+
+    function drawSparks(dt) {
+      for (let i = sparks.length - 1; i >= 0; i--) {
+        const s = sparks[i];
+        s.x += s.vx * dt;
+        s.y += s.vy * dt;
+        s.z += s.vz * dt;
+        s.life -= dt;
+        const p = project(s.x, s.y, s.z);
+        if (p) {
+          ctx.fillStyle = s.color;
+          ctx.globalAlpha = Math.max(0, s.life / 14);
+          ctx.fillRect(p.x, p.y, 2, 2);
+        }
+        if (s.life <= 0) sparks.splice(i, 1);
+      }
+      ctx.globalAlpha = 1;
     }
 
     function demoGift(combo) {
-      const names = ["luna", "kai", "nova", "rex", "mira"];
+      const names = ["luna", "kai", "nova", "rex", "mira", "zed"];
       const gifts = [
         { giftName: "Rose", diamondCount: 1, giftType: 1 },
         { giftName: "TikTok", diamondCount: 1, giftType: 1 },
-        { giftName: "Ice Cream Cone", diamondCount: 1, giftType: 1 },
+        { giftName: "Perfume", diamondCount: 20, giftType: 0 },
+        { giftName: "Drama", diamondCount: 100, giftType: 0 },
         { giftName: "Lion", diamondCount: 299, giftType: 0 },
         { giftName: "Galaxy", diamondCount: 1000, giftType: 0 }
       ];
       const user = names[Math.floor(Math.random() * names.length)];
       const gift = gifts[Math.floor(Math.random() * gifts.length)];
+      const nick = user[0].toUpperCase() + user.slice(1);
       if (!combo || gift.giftType !== 1) {
         handleGift({
-          uniqueId: user,
-          nickname: user[0].toUpperCase() + user.slice(1),
-          giftName: gift.giftName,
-          giftType: gift.giftType,
+          uniqueId: user, nickname: nick, giftName: gift.giftName, giftType: gift.giftType,
           diamondCount: gift.diamondCount,
-          repeatCount: gift.giftType === 1 ? 1 + Math.floor(Math.random() * 12) : 1,
+          repeatCount: gift.giftType === 1 ? 1 + Math.floor(Math.random() * 14) : 1,
           repeatEnd: true
         });
         return;
@@ -964,30 +1379,21 @@
       let n = 1;
       const id = setInterval(() => {
         handleGift({
-          uniqueId: user,
-          nickname: user[0].toUpperCase() + user.slice(1),
-          giftName: gift.giftName,
-          giftType: 1,
-          diamondCount: gift.diamondCount,
-          repeatCount: n,
-          repeatEnd: n >= 8
+          uniqueId: user, nickname: nick, giftName: gift.giftName, giftType: 1,
+          diamondCount: 1, repeatCount: n, repeatEnd: n >= 12
         });
         n += 1;
-        if (n > 8) clearInterval(id);
-      }, 180);
+        if (n > 12) clearInterval(id);
+      }, 120);
     }
 
     function onKey(e) {
       if (e.target && /input|textarea/i.test(e.target.tagName)) return;
       if (e.key === "d" || e.key === "D") demoGift(false);
       if (e.key === "c" || e.key === "C") demoGift(true);
-      if (e.key === "r" || e.key === "R") resetGoal();
+      if (e.key === "r" || e.key === "R") resetGrid();
       if (e.key === "s" || e.key === "S") document.body.classList.toggle("show-settings");
     }
-
-    els.avatar.addEventListener("error", () => {
-      els.avatar.style.display = "none";
-    });
   </script>
 </body>
 </html>

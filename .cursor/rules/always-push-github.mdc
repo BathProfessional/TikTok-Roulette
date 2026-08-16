@@ -1,0 +1,13 @@
+---
+description: Commit and push every completed change to GitHub
+alwaysApply: true
+---
+
+# Always push to GitHub
+
+After finishing a change, create a git commit and push to `origin`. Do not wait to be asked.
+
+- Stage only files related to the change
+- Never commit secrets (`.env`, credentials, API keys)
+- Push with `git push -u origin HEAD` after a successful commit
+- Never force-push unless the user explicitly asks
